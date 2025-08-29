@@ -1,4 +1,4 @@
-# Carrinho com RFID
+# Carrinho autoático com RFID
 
 ## 1. Introdução
 
