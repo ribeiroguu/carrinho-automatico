@@ -278,20 +278,20 @@ export default function Profile() {
                         {emp.livro.autor}
                       </Text>
                       <Text style={{ fontFamily: "Manrope-Regular", fontSize: 12, color: "#999", marginTop: 5 }}>
-                        Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString('pt-BR')}
+                        Retirada: {new Date(emp.data_retirada).toLocaleDateString('pt-BR')}
                       </Text>
-                      {emp.data_devolucao_real && (
+                      {emp.data_devolucao && (
                         <Text style={{ fontFamily: "Manrope-Regular", fontSize: 12, color: "#999" }}>
-                          Devolução: {new Date(emp.data_devolucao_real).toLocaleDateString('pt-BR')}
+                          Devolução: {new Date(emp.data_devolucao).toLocaleDateString('pt-BR')}
                         </Text>
                       )}
                       <Text style={{ 
                         fontFamily: "Manrope-Regular", 
                         fontSize: 12, 
-                        color: emp.status === 'ativo' ? '#007AFF' : (emp.status === 'atrasado' ? '#FF3B30' : '#4CAF50'),
+                        color: !emp.data_devolucao ? (emp.atrasado ? '#FF3B30' : '#007AFF') : '#4CAF50',
                         marginTop: 5 
                       }}>
-                        Status: {emp.status === 'ativo' ? 'Ativo' : (emp.status === 'atrasado' ? 'Atrasado' : 'Devolvido')}
+                        Status: {!emp.data_devolucao ? (emp.atrasado ? 'Atrasado' : 'Ativo') : 'Devolvido'}
                       </Text>
                     </View>
                   ))

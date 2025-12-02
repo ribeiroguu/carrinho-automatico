@@ -14,9 +14,9 @@ export async function favoritosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const favoritos = await favoritosService.getFavoritos(id)
+        const favoritos = await favoritosService.getFavoritos(matricula)
 
         return reply.send({ favoritos })
       } catch (error: any) {
@@ -35,10 +35,10 @@ export async function favoritosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const { livroId } = request.params as { livroId: string }
 
-        await favoritosService.addFavorito(id, livroId)
+        await favoritosService.addFavorito(matricula, livroId)
 
         return reply.send({
           message: 'Livro adicionado aos favoritos',
@@ -59,10 +59,10 @@ export async function favoritosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const { livroId } = request.params as { livroId: string }
 
-        await favoritosService.removeFavorito(id, livroId)
+        await favoritosService.removeFavorito(matricula, livroId)
 
         return reply.send({
           message: 'Livro removido dos favoritos',
@@ -83,10 +83,10 @@ export async function favoritosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const { livroId } = request.params as { livroId: string }
 
-        const isFavorito = await favoritosService.isFavorito(id, livroId)
+        const isFavorito = await favoritosService.isFavorito(matricula, livroId)
 
         return reply.send({ isFavorito })
       } catch (error: any) {

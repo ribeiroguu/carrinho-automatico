@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { BookCard } from "@/components/card";
 import { emprestimosService } from "@/services/emprestimos.service";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import type { Emprestimo } from "@/types";
 import { LoadingScreen } from "@/components/loading-screen";
 import { ErrorState } from "@/components/error-state";
@@ -22,7 +22,8 @@ export default function MeusLivros() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [actioningId, setActioningId] = useState<number | null>(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const router = useRouter();
 
   const loadEmprestimos = async (isRefreshing = false) => {
     try {
@@ -49,7 +50,7 @@ export default function MeusLivros() {
     loadEmprestimos(true);
   };
 
-  const handleRenovar = async (emprestimoId: number) => {
+  const handleRenovar = async (emprestimoId: string) => {
     Alert.alert(
       "Renovar Empréstimo",
       "Deseja renovar este empréstimo por mais 7 dias?",
@@ -74,7 +75,7 @@ export default function MeusLivros() {
     );
   };
 
-  const handleDevolver = async (emprestimoId: number) => {
+  const handleDevolver = async (emprestimoId: string) => {
     Alert.alert(
       "Devolver Livro",
       "Confirma a devolução deste livro?",
@@ -98,6 +99,13 @@ export default function MeusLivros() {
         },
       ]
     );
+  };
+
+  const handleCardPress = (livroRfid: string) => {
+    router.push({
+      pathname: "/livro",
+      params: { id: livroRfid },
+    });
   };
 
   if (loading) {
@@ -163,8 +171,8 @@ export default function MeusLivros() {
                 <BookCard
                   title={emprestimo.livro.titulo}
                   author={emprestimo.livro.autor}
-                  description={`Vence em: ${new Date(emprestimo.data_devolucao_prevista).toLocaleDateString('pt-BR')} | Renovações: ${emprestimo.renovacoes}/3`}
-                  status={emprestimo.status === "atrasado" ? 0 : 1}
+                  description={`Vence em: ${new Date(emprestimo.data_prevista).toLocaleDateString('pt-BR')} | Renovações: ${emprestimo.renovacoes}/3`}
+                  status={emprestimo.atrasado ? 0 : 1}
                   imageSource={
                     emprestimo.livro.capa_url
                       ? { uri: emprestimo.livro.capa_url }
@@ -174,6 +182,7 @@ export default function MeusLivros() {
                   icon2={"restore"}
                   onIcon1Press={() => handleRenovar(emprestimo.id)}
                   onIcon2Press={() => handleDevolver(emprestimo.id)}
+                  onPress={() => handleCardPress(emprestimo.livro.rfid_tag)}
                 />
                 {actioningId === emprestimo.id && (
                   <View

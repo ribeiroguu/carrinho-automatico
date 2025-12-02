@@ -4,7 +4,7 @@ import Button from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import LogoBibliotech from "@/components/logo";
 import { useCartStore } from "@/stores/cartStore";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -28,7 +28,8 @@ export default function Carrinho() {
     stopPolling,
   } = useCartStore();
 
-  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
@@ -59,7 +60,7 @@ export default function Carrinho() {
     }
   };
 
-  const handleRemoverLivro = async (livroId: number) => {
+  const handleRemoverLivro = async (livroId: string) => {
     Alert.alert(
       "Remover Livro",
       "Deseja remover este livro do carrinho?",
@@ -81,6 +82,13 @@ export default function Carrinho() {
         },
       ]
     );
+  };
+
+  const handleCardPress = (livroRfid: string) => {
+    router.push({
+      pathname: "/livro",
+      params: { id: livroRfid },
+    });
   };
 
   const handleFinalizar = async () => {
@@ -206,7 +214,7 @@ export default function Carrinho() {
               />
             ) : (
               livros.map((livro) => (
-                <View key={livro.id} style={{ position: "relative", width: "100%" }}>
+                <View key={livro.rfid_tag} style={{ position: "relative", width: "100%" }}>
                   <BookCard
                     title={livro.titulo}
                     author={livro.autor}
@@ -218,9 +226,10 @@ export default function Carrinho() {
                         : require("@/assets/images/logo.png")
                     }
                     icon1={"trash"}
-                    onIcon1Press={() => handleRemoverLivro(livro.id)}
+                    onIcon1Press={() => handleRemoverLivro(livro.rfid_tag)}
+                    onPress={() => handleCardPress(livro.rfid_tag)}
                   />
-                  {removingId === livro.id && (
+                  {removingId === livro.rfid_tag && (
                     <View
                       style={{
                         position: "absolute",

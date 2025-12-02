@@ -2,7 +2,6 @@ import type { FastifyRequest } from 'fastify'
 
 export interface AuthRequest extends FastifyRequest {
   user: {
-    id: string
     matricula: string
     email: string
   }

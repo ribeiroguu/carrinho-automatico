@@ -1,7 +1,6 @@
 export interface Usuario {
-  id: string
+  matricula: string // PRIMARY KEY
   nome: string
-  matricula: string
   email: string
   senha_hash: string
   curso: string | null
@@ -13,10 +12,9 @@ export interface Usuario {
 }
 
 export interface Livro {
-  id: string
+  rfid_tag: string // PRIMARY KEY
   titulo: string
   autor: string
-  rfid_tag: string
   capa_url: string | null
   categoria: string | null
   sinopse: string | null
@@ -26,9 +24,9 @@ export interface Livro {
 }
 
 export interface Emprestimo {
-  id: string
-  usuario_id: string
-  livro_id: string
+  id: string // UUID
+  usuario_matricula: string // FK -> usuarios(matricula)
+  livro_rfid: string // FK -> livros(rfid_tag)
   data_retirada: Date
   data_prevista: Date
   data_devolucao: Date | null
@@ -39,16 +37,16 @@ export interface Emprestimo {
 }
 
 export interface Favorito {
-  id: string
-  usuario_id: string
-  livro_id: string
+  id: string // UUID
+  usuario_matricula: string // FK -> usuarios(matricula)
+  livro_rfid: string // FK -> livros(rfid_tag)
   created_at: Date
 }
 
 export interface CarrinhoSessao {
-  id: string
-  usuario_id: string
-  livro_id: string
+  id: string // UUID
+  usuario_matricula: string // FK -> usuarios(matricula)
+  livro_rfid: string // FK -> livros(rfid_tag)
   sessao_id: string
   data_leitura: Date
   finalizado: boolean

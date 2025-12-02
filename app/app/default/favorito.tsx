@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/error-state";
 import { LoadingScreen } from "@/components/loading-screen";
 import LogoBibliotech from "@/components/logo";
 import { favoritosService } from "@/services/favoritos.service";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,14 +15,15 @@ import {
   Text,
   View
 } from "react-native";
-import type { Livro } from "@/types";
+import type { Favorito } from "@/types";
 
 export default function Favorito() {
-  const [favoritos, setFavoritos] = useState<Livro[]>([]);
+  const [favoritos, setFavoritos] = useState<Favorito[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const router = useRouter();
 
   const loadFavoritos = async (isRefreshing = false) => {
     try {
@@ -49,7 +50,7 @@ export default function Favorito() {
     loadFavoritos(true);
   };
 
-  const handleRemoveFavorito = async (livroId: number) => {
+  const handleRemoveFavorito = async (livroId: string) => {
     Alert.alert(
       "Remover Favorito",
       "Deseja remover este livro dos favoritos?",
@@ -59,11 +60,11 @@ export default function Favorito() {
           text: "Remover",
           style: "destructive",
           onPress: async () => {
-            try {
-              setRemovingId(livroId);
-              await favoritosService.remover(livroId);
-              setFavoritos((prev) => prev.filter((f) => f.id !== livroId));
-            } catch (err) {
+          try {
+            setRemovingId(livroId);
+            await favoritosService.remover(livroId);
+            setFavoritos((prev) => prev.filter((f) => f.livro.rfid_tag !== livroId));
+          } catch (err) {
               Alert.alert("Erro", err instanceof Error ? err.message : "Erro ao remover favorito");
             } finally {
               setRemovingId(null);
@@ -72,6 +73,13 @@ export default function Favorito() {
         },
       ]
     );
+  };
+
+  const handleCardPress = (livroRfid: string) => {
+    router.push({
+      pathname: "/livro",
+      params: { id: livroRfid },
+    });
   };
 
   if (loading) {
@@ -135,22 +143,23 @@ export default function Favorito() {
             description="Adicione livros aos favoritos para vê-los aqui"
           />
         ) : (
-          favoritos.map((livro) => (
-            <View key={livro.id} style={{ position: "relative", width: "100%" }}>
+          favoritos.map((favorito) => (
+            <View key={favorito.id} style={{ position: "relative", width: "100%" }}>
               <BookCard
-                title={livro.titulo}
-                author={livro.autor}
-                description={livro.sinopse || "Sem descrição"}
-                status={livro.status === "disponivel" ? 1 : 0}
+                title={favorito.livro.titulo}
+                author={favorito.livro.autor}
+                description={favorito.livro.sinopse || "Sem descrição"}
+                status={favorito.livro.status === "disponivel" ? 1 : 0}
                 imageSource={
-                  livro.capa_url
-                    ? { uri: livro.capa_url }
+                  favorito.livro.capa_url
+                    ? { uri: favorito.livro.capa_url }
                     : require("@/assets/images/logo.png")
                 }
                 icon1={"heartOff"}
-                onIcon1Press={() => handleRemoveFavorito(livro.id)}
+                onIcon1Press={() => handleRemoveFavorito(favorito.livro.rfid_tag)}
+                onPress={() => handleCardPress(favorito.livro.rfid_tag)}
               />
-              {removingId === livro.id && (
+              {removingId === favorito.livro.rfid_tag && (
                 <View
                   style={{
                     position: "absolute",

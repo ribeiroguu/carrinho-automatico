@@ -16,9 +16,9 @@ export async function usuarioRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const usuario = await usuarioService.getPerfil(id)
+        const usuario = await usuarioService.getPerfil(matricula)
 
         if (!usuario) {
           return reply.status(404).send({
@@ -46,10 +46,10 @@ export async function usuarioRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const updates = request.body as UpdateProfileBody
 
-        const usuario = await usuarioService.updatePerfil(id, updates)
+        const usuario = await usuarioService.updatePerfil(matricula, updates)
 
         // Remove a senha do retorno
         const { senha_hash, ...usuarioSemSenha } = usuario
@@ -74,10 +74,10 @@ export async function usuarioRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const { push_token } = request.body as { push_token: string }
 
-        await usuarioService.updatePushToken(id, push_token)
+        await usuarioService.updatePushToken(matricula, push_token)
 
         return reply.send({
           message: 'Push token atualizado com sucesso',
@@ -98,9 +98,9 @@ export async function usuarioRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const status = await usuarioService.getStatusMulta(id)
+        const status = await usuarioService.getStatusMulta(matricula)
 
         return reply.send(status)
       } catch (error: any) {

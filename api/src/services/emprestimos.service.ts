@@ -2,7 +2,7 @@ import { supabase } from '../config/supabase'
 import type { EmprestimoComLivro } from '../types/database.types'
 
 export class EmprestimosService {
-  async getAtivos(usuario_id: string): Promise<EmprestimoComLivro[]> {
+  async getAtivos(usuario_matricula: string): Promise<EmprestimoComLivro[]> {
     const { data, error } = await supabase
       .from('emprestimos')
       .select(
@@ -11,7 +11,7 @@ export class EmprestimosService {
 				livro:livros (*)
 			`,
       )
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .is('data_devolucao', null)
       .order('data_retirada', { ascending: false })
 
@@ -23,7 +23,7 @@ export class EmprestimosService {
   }
 
   async getHistorico(
-    usuario_id: string,
+    usuario_matricula: string,
     page = 1,
     limit = 10,
   ): Promise<{ historico: EmprestimoComLivro[]; total: number }> {
@@ -38,7 +38,7 @@ export class EmprestimosService {
 			`,
         { count: 'exact' },
       )
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .not('data_devolucao', 'is', null)
       .order('data_devolucao', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -55,14 +55,14 @@ export class EmprestimosService {
 
   async renovar(
     emprestimo_id: string,
-    usuario_id: string,
+    usuario_matricula: string,
   ): Promise<{ success: boolean; nova_data: Date }> {
     // Busca o empréstimo
     const { data: emprestimo, error: fetchError } = await supabase
       .from('emprestimos')
       .select('*')
       .eq('id', emprestimo_id)
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .is('data_devolucao', null)
       .single()
 
@@ -108,14 +108,14 @@ export class EmprestimosService {
 
   async devolver(
     emprestimo_id: string,
-    usuario_id: string,
+    usuario_matricula: string,
   ): Promise<{ success: boolean }> {
     // Busca o empréstimo
     const { data: emprestimo, error: fetchError } = await supabase
       .from('emprestimos')
       .select('*')
       .eq('id', emprestimo_id)
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .is('data_devolucao', null)
       .single()
 
@@ -156,7 +156,7 @@ export class EmprestimosService {
           dias_bloqueado: diasAtraso,
           data_fim_bloqueio: new Date(Date.now() + diasAtraso * 24 * 60 * 60 * 1000).toISOString(),
         })
-        .eq('id', usuario_id)
+        .eq('matricula', usuario_matricula)
 
       if (multaError) {
         console.error('Erro ao aplicar multa:', multaError)
@@ -166,7 +166,7 @@ export class EmprestimosService {
     return { success: true }
   }
 
-  async verificarLimite(usuario_id: string): Promise<{
+  async verificarLimite(usuario_matricula: string): Promise<{
     pode_emprestar: boolean
     livros_atuais: number
     bloqueado: boolean
@@ -175,14 +175,14 @@ export class EmprestimosService {
     const { count: livrosEmprestados } = await supabase
       .from('emprestimos')
       .select('*', { count: 'exact', head: true })
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .is('data_devolucao', null)
 
     // Verifica se o usuário está bloqueado
     const { data: usuario } = await supabase
       .from('usuarios')
       .select('dias_bloqueado, data_fim_bloqueio')
-      .eq('id', usuario_id)
+      .eq('matricula', usuario_matricula)
       .single()
 
     const bloqueado =

@@ -16,7 +16,6 @@ export async function authMiddleware(
 
     const token = authHeader.substring(7)
     const decoded = await request.server.jwt.verify<{
-      id: string
       matricula: string
       email: string
     }>(token)

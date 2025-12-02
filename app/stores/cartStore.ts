@@ -11,7 +11,7 @@ interface CartStore {
 	// Actions
 	iniciarSessao: () => Promise<void>;
 	fetchLivros: () => Promise<void>;
-	removerLivro: (livroId: number) => Promise<void>;
+	removerLivro: (livroId: string) => Promise<void>;
 	finalizar: () => Promise<void>;
 	limparSessao: () => void;
 	startPolling: () => void;
@@ -49,7 +49,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
 		}
 	},
 
-	removerLivro: async (livroId: number) => {
+	removerLivro: async (livroId: string) => {
 		const { sessao } = get();
 		if (!sessao) return;
 

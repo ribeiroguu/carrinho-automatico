@@ -5,16 +5,19 @@ import { ErrorState } from "@/components/error-state";
 import { LoadingScreen } from "@/components/loading-screen";
 import LogoBibliotech from "@/components/logo";
 import { useBooksStore } from "@/stores/booksStore";
+import { favoritosService } from "@/services/favoritos.service";
 import { useRouter } from "expo-router";
 import { Search } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View, Alert } from "react-native";
 import { Searchbar } from "react-native-paper";
 
 export default function Home() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [favoritingId, setFavoritingId] = useState<string | null>(null);
+	const [favoritosRfids, setFavoritosRfids] = useState<Set<string>>(new Set());
 
 	const router = useRouter();
 	const { livros, recomendados, isLoading, fetchLivros, fetchRecomendados } =
@@ -23,6 +26,7 @@ export default function Home() {
 	// Carrega livros e recomendados ao montar
 	useEffect(() => {
 		loadData();
+		loadFavoritos();
 	}, []);
 
 	const loadData = async () => {
@@ -32,6 +36,16 @@ export default function Home() {
 		} catch (err: any) {
 			console.error("Erro ao carregar dados:", err);
 			setError("Erro ao carregar livros. Tente novamente.");
+		}
+	};
+
+	const loadFavoritos = async () => {
+		try {
+			const favoritos = await favoritosService.listar();
+			const rfids = new Set(favoritos.map((f) => f.livro_rfid));
+			setFavoritosRfids(rfids);
+		} catch (err) {
+			console.error("Erro ao carregar favoritos:", err);
 		}
 	};
 
@@ -58,15 +72,43 @@ export default function Home() {
 
 	const onRefresh = useCallback(async () => {
 		setIsRefreshing(true);
-		await loadData();
+		await Promise.all([loadData(), loadFavoritos()]);
 		setIsRefreshing(false);
 	}, []);
 
 	const handleCardPress = (livro: any) => {
 		router.push({
 			pathname: "/livro",
-			params: { id: livro.id },
+			params: { id: livro.rfid_tag },
 		});
+	};
+
+	const handleFavoritar = async (livroRfid: string) => {
+		if (favoritingId) return; // Evita cliques múltiplos
+
+		const isFavorito = favoritosRfids.has(livroRfid);
+
+		try {
+			setFavoritingId(livroRfid);
+			
+			if (isFavorito) {
+				// Remover dos favoritos
+				await favoritosService.remover(livroRfid);
+				setFavoritosRfids((prev) => {
+					const newSet = new Set(prev);
+					newSet.delete(livroRfid);
+					return newSet;
+				});
+			} else {
+				// Adicionar aos favoritos
+				await favoritosService.adicionar(livroRfid);
+				setFavoritosRfids((prev) => new Set(prev).add(livroRfid));
+			}
+		} catch (err: any) {
+			Alert.alert("Erro", err.response?.data?.error || err.message || "Erro ao atualizar favorito");
+		} finally {
+			setFavoritingId(null);
+		}
 	};
 
 	if (isLoading && livros.length === 0 && recomendados.length === 0) {
@@ -146,25 +188,26 @@ export default function Home() {
 							}
 						/>
 					) : (
-						displayBooks.map((book) => (
-							<BookCard
-								key={book.id}
-								title={book.titulo}
-								author={book.autor}
-								description={book.sinopse || "Sem descrição"}
-								status={book.status === "disponivel" ? 1 : 0}
-								imageSource={
-									book.capa_url
-										? { uri: book.capa_url }
-										: require("@/assets/images/logo.png")
-								}
-								icon1={"heart"}
-								onIcon1Press={() => {
-									console.log("Favoritar:", book.id);
-								}}
-								onPress={() => handleCardPress(book)}
-							/>
-						))
+						displayBooks.map((book) => {
+							const isFavorito = favoritosRfids.has(book.rfid_tag);
+							return (
+								<BookCard
+									key={book.rfid_tag}
+									title={book.titulo}
+									author={book.autor}
+									description={book.sinopse || "Sem descrição"}
+									status={book.status === "disponivel" ? 1 : 0}
+									imageSource={
+										book.capa_url
+											? { uri: book.capa_url }
+											: require("@/assets/images/logo.png")
+									}
+									icon1={isFavorito ? "heartOff" : "heart"}
+									onIcon1Press={() => handleFavoritar(book.rfid_tag)}
+									onPress={() => handleCardPress(book)}
+								/>
+							);
+						})
 					)}
 				</ScrollView>
 			</View>

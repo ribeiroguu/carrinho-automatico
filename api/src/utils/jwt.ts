@@ -4,7 +4,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
 export function generateToken(
   fastify: FastifyInstance,
-  payload: { id: string; matricula: string; email: string },
+  payload: { matricula: string; email: string },
 ): string {
   return fastify.jwt.sign(payload, { expiresIn: '7d' })
 }
@@ -12,7 +12,7 @@ export function generateToken(
 export async function verifyToken(
   fastify: FastifyInstance,
   token: string,
-): Promise<{ id: string; matricula: string; email: string }> {
+): Promise<{ matricula: string; email: string }> {
   return fastify.jwt.verify(token)
 }
 

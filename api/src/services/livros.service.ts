@@ -48,11 +48,11 @@ export class LivrosService {
     }
   }
 
-  async getById(id: string): Promise<Livro | null> {
+  async getById(rfid_tag: string): Promise<Livro | null> {
     const { data: livro, error } = await supabase
       .from('livros')
       .select('*')
-      .eq('id', id)
+      .eq('rfid_tag', rfid_tag)
       .single()
 
     if (error || !livro) {
@@ -80,17 +80,8 @@ export class LivrosService {
     return livros || []
   }
 
+  // Método alias para clareza
   async getByRfidTag(rfid_tag: string): Promise<Livro | null> {
-    const { data: livro, error } = await supabase
-      .from('livros')
-      .select('*')
-      .eq('rfid_tag', rfid_tag)
-      .single()
-
-    if (error || !livro) {
-      return null
-    }
-
-    return livro
+    return this.getById(rfid_tag)
   }
 }

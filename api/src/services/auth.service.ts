@@ -13,7 +13,7 @@ export class AuthService {
     // Verifica se matrícula já existe
     const { data: existingMatricula } = await supabase
       .from('usuarios')
-      .select('id')
+      .select('matricula')
       .eq('matricula', data.matricula)
       .single()
 
@@ -24,7 +24,7 @@ export class AuthService {
     // Verifica se email já existe
     const { data: existingEmail } = await supabase
       .from('usuarios')
-      .select('id')
+      .select('email')
       .eq('email', data.email)
       .single()
 
@@ -77,11 +77,11 @@ export class AuthService {
     return usuario
   }
 
-  async getUserById(id: string): Promise<Usuario | null> {
+  async getUserByMatricula(matricula: string): Promise<Usuario | null> {
     const { data: usuario, error } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('id', id)
+      .eq('matricula', matricula)
       .single()
 
     if (error || !usuario) {

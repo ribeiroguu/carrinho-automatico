@@ -14,9 +14,9 @@ export async function emprestimosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const emprestimos = await emprestimosService.getAtivos(id)
+        const emprestimos = await emprestimosService.getAtivos(matricula)
 
         return reply.send({ emprestimos })
       } catch (error: any) {
@@ -35,14 +35,14 @@ export async function emprestimosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
         const { page, limit } = request.query as {
           page?: string
           limit?: string
         }
 
         const result = await emprestimosService.getHistorico(
-          id,
+          matricula,
           page ? Number.parseInt(page) : 1,
           limit ? Number.parseInt(limit) : 10,
         )
@@ -64,12 +64,12 @@ export async function emprestimosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id: usuario_id } = (request as AuthRequest).user
+        const { matricula: usuario_matricula } = (request as AuthRequest).user
         const { id: emprestimo_id } = request.params as { id: string }
 
         const result = await emprestimosService.renovar(
           emprestimo_id,
-          usuario_id,
+          usuario_matricula,
         )
 
         return reply.send({
@@ -92,10 +92,10 @@ export async function emprestimosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id: usuario_id } = (request as AuthRequest).user
+        const { matricula: usuario_matricula } = (request as AuthRequest).user
         const { id: emprestimo_id } = request.params as { id: string }
 
-        await emprestimosService.devolver(emprestimo_id, usuario_id)
+        await emprestimosService.devolver(emprestimo_id, usuario_matricula)
 
         return reply.send({
           message: 'Livro devolvido com sucesso',
@@ -116,9 +116,9 @@ export async function emprestimosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const result = await emprestimosService.verificarLimite(id)
+        const result = await emprestimosService.verificarLimite(matricula)
 
         return reply.send(result)
       } catch (error: any) {

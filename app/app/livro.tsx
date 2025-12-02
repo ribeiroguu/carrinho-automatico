@@ -29,7 +29,7 @@ export default function LivroPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await livrosService.getById(Number(id));
+      const data = await livrosService.getById(id);
       setLivro(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar livro");
@@ -40,7 +40,7 @@ export default function LivroPage() {
 
   const checkFavorito = async () => {
     try {
-      const result = await favoritosService.isFavorito(Number(id));
+      const result = await favoritosService.isFavorito(id);
       setIsFavorito(result.isFavorito);
     } catch (err) {
       console.error("Erro ao verificar favorito:", err);
@@ -53,13 +53,11 @@ export default function LivroPage() {
     try {
       setFavoriteLoading(true);
       if (isFavorito) {
-        await favoritosService.remover(livro.id);
+        await favoritosService.remover(livro.rfid_tag);
         setIsFavorito(false);
-        Alert.alert("Sucesso", "Livro removido dos favoritos");
       } else {
-        await favoritosService.adicionar(livro.id);
+        await favoritosService.adicionar(livro.rfid_tag);
         setIsFavorito(true);
-        Alert.alert("Sucesso", "Livro adicionado aos favoritos");
       }
     } catch (err) {
       Alert.alert("Erro", err instanceof Error ? err.message : "Erro ao atualizar favorito");

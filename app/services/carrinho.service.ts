@@ -12,7 +12,7 @@ export const carrinhoService = {
 		return response.data.livros;
 	},
 
-	async removerLivro(livroId: number, sessaoId: string): Promise<void> {
+	async removerLivro(livroId: string, sessaoId: string): Promise<void> {
 		await api.delete(`/carrinho/remover/${livroId}`, {
 			data: { sessao_id: sessaoId },
 		});

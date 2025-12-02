@@ -62,9 +62,9 @@ export async function livrosRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const usuario = await authService.getUserById(id)
+        const usuario = await authService.getUserByMatricula(matricula)
 
         if (!usuario) {
           return reply.status(404).send({

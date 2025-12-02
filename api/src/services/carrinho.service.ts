@@ -12,12 +12,12 @@ export class CarrinhoService {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
-  async iniciarSessao(usuario_id: string): Promise<{
+  async iniciarSessao(usuario_matricula: string): Promise<{
     sessao_id: string
     codigo: string
   }> {
     const codigo = this.gerarCodigo()
-    const sessao_id = `${usuario_id}_${Date.now()}`
+    const sessao_id = `${usuario_matricula}_${Date.now()}`
 
     return {
       sessao_id,
@@ -41,11 +41,11 @@ export class CarrinhoService {
       throw new Error(`Livro não está disponível. Status: ${livro.status}`)
     }
 
-    // Extrai o usuario_id do sessao_id
-    const usuario_id = sessao_id.split('_')[0]
+    // Extrai o usuario_matricula do sessao_id
+    const usuario_matricula = sessao_id.split('_')[0]
 
     // Verifica se o usuário pode emprestar mais livros
-    const limite = await this.emprestimosService.verificarLimite(usuario_id)
+    const limite = await this.emprestimosService.verificarLimite(usuario_matricula)
 
     if (limite.bloqueado) {
       throw new Error('Você está bloqueado e não pode pegar livros emprestados')
@@ -69,7 +69,7 @@ export class CarrinhoService {
       .from('carrinho_sessao')
       .select('id')
       .eq('sessao_id', sessao_id)
-      .eq('livro_id', livro.id)
+      .eq('livro_rfid', livro.rfid_tag)
       .eq('finalizado', false)
       .single()
 
@@ -82,8 +82,8 @@ export class CarrinhoService {
 
     // Adiciona ao carrinho
     const { error } = await supabase.from('carrinho_sessao').insert({
-      usuario_id,
-      livro_id: livro.id,
+      usuario_matricula,
+      livro_rfid: livro.rfid_tag,
       sessao_id,
       finalizado: false,
     })
@@ -120,13 +120,13 @@ export class CarrinhoService {
 
   async removerLivro(
     sessao_id: string,
-    livro_id: string,
+    livro_rfid: string,
   ): Promise<{ success: boolean }> {
     const { error } = await supabase
       .from('carrinho_sessao')
       .delete()
       .eq('sessao_id', sessao_id)
-      .eq('livro_id', livro_id)
+      .eq('livro_rfid', livro_rfid)
       .eq('finalizado', false)
 
     if (error) {
@@ -148,10 +148,10 @@ export class CarrinhoService {
       throw new Error('Carrinho vazio ou não encontrado')
     }
 
-    const usuario_id = itens[0].usuario_id
+    const usuario_matricula = itens[0].usuario_matricula
 
     // Verifica novamente o limite
-    const limite = await this.emprestimosService.verificarLimite(usuario_id)
+    const limite = await this.emprestimosService.verificarLimite(usuario_matricula)
 
     if (limite.bloqueado) {
       throw new Error('Você está bloqueado e não pode pegar livros emprestados')
@@ -166,8 +166,8 @@ export class CarrinhoService {
     dataPrevista.setDate(dataPrevista.getDate() + 7) // 7 dias
 
     const emprestimos = itens.map((item) => ({
-      usuario_id: item.usuario_id,
-      livro_id: item.livro_id,
+      usuario_matricula: item.usuario_matricula,
+      livro_rfid: item.livro_rfid,
       data_prevista: dataPrevista.toISOString(),
       renovacoes: 0,
     }))

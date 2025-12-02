@@ -3,11 +3,11 @@ import type { Usuario } from '../types/database.types'
 import { comparePassword, hashPassword } from '../utils/bcrypt'
 
 export class UsuarioService {
-  async getPerfil(usuario_id: string): Promise<Usuario | null> {
+  async getPerfil(usuario_matricula: string): Promise<Usuario | null> {
     const { data: usuario, error } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('id', usuario_id)
+      .eq('matricula', usuario_matricula)
       .single()
 
     if (error || !usuario) {
@@ -18,7 +18,7 @@ export class UsuarioService {
   }
 
   async updatePerfil(
-    usuario_id: string,
+    usuario_matricula: string,
     updates: {
       nome?: string
       email?: string
@@ -26,7 +26,7 @@ export class UsuarioService {
       senha_nova?: string
     },
   ): Promise<Usuario> {
-    const usuario = await this.getPerfil(usuario_id)
+    const usuario = await this.getPerfil(usuario_matricula)
 
     if (!usuario) {
       throw new Error('Usuário não encontrado')
@@ -44,9 +44,9 @@ export class UsuarioService {
       // Verifica se email já existe
       const { data: existingEmail } = await supabase
         .from('usuarios')
-        .select('id')
+        .select('email')
         .eq('email', updates.email)
-        .neq('id', usuario_id)
+        .neq('matricula', usuario_matricula)
         .single()
 
       if (existingEmail) {
@@ -80,7 +80,7 @@ export class UsuarioService {
     const { data: updatedUser, error } = await supabase
       .from('usuarios')
       .update(updateData)
-      .eq('id', usuario_id)
+      .eq('matricula', usuario_matricula)
       .select()
       .single()
 
@@ -91,23 +91,23 @@ export class UsuarioService {
     return updatedUser
   }
 
-  async updatePushToken(usuario_id: string, push_token: string): Promise<void> {
+  async updatePushToken(usuario_matricula: string, push_token: string): Promise<void> {
     const { error } = await supabase
       .from('usuarios')
       .update({ push_token })
-      .eq('id', usuario_id)
+      .eq('matricula', usuario_matricula)
 
     if (error) {
       throw new Error(`Erro ao atualizar push token: ${error.message}`)
     }
   }
 
-  async getStatusMulta(usuario_id: string): Promise<{
+  async getStatusMulta(usuario_matricula: string): Promise<{
     bloqueado: boolean
     dias_restantes: number
     data_fim_bloqueio: Date | null
   }> {
-    const usuario = await this.getPerfil(usuario_id)
+    const usuario = await this.getPerfil(usuario_matricula)
 
     if (!usuario) {
       throw new Error('Usuário não encontrado')

@@ -20,9 +20,9 @@ export async function carrinhoRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const result = await carrinhoService.iniciarSessao(id)
+        const result = await carrinhoService.iniciarSessao(matricula)
 
         return reply.send(result)
       } catch (error: any) {

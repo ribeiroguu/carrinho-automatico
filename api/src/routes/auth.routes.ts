@@ -22,16 +22,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         const usuario = await authService.register(body)
 
         const token = generateToken(fastify, {
-          id: usuario.id,
           matricula: usuario.matricula,
           email: usuario.email,
         })
 
         return reply.status(201).send({
           user: {
-            id: usuario.id,
-            nome: usuario.nome,
             matricula: usuario.matricula,
+            nome: usuario.nome,
             email: usuario.email,
             curso: usuario.curso,
           },
@@ -64,16 +62,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
 
         const token = generateToken(fastify, {
-          id: usuario.id,
           matricula: usuario.matricula,
           email: usuario.email,
         })
 
         return reply.send({
           user: {
-            id: usuario.id,
-            nome: usuario.nome,
             matricula: usuario.matricula,
+            nome: usuario.nome,
             email: usuario.email,
             curso: usuario.curso,
             dias_bloqueado: usuario.dias_bloqueado,
@@ -97,9 +93,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { id } = (request as AuthRequest).user
+        const { matricula } = (request as AuthRequest).user
 
-        const usuario = await authService.getUserById(id)
+        const usuario = await authService.getUserByMatricula(matricula)
 
         if (!usuario) {
           return reply.status(404).send({
@@ -109,9 +105,8 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         return reply.send({
           user: {
-            id: usuario.id,
-            nome: usuario.nome,
             matricula: usuario.matricula,
+            nome: usuario.nome,
             email: usuario.email,
             curso: usuario.curso,
             dias_bloqueado: usuario.dias_bloqueado,

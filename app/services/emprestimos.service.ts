@@ -19,12 +19,12 @@ export const emprestimosService = {
 		return response.data;
 	},
 
-	async renovar(emprestimoId: number): Promise<{ nova_data_devolucao_prevista: string }> {
+	async renovar(emprestimoId: string): Promise<{ nova_data_devolucao_prevista: string }> {
 		const response = await api.post(`/emprestimos/${emprestimoId}/renovar`);
 		return response.data;
 	},
 
-	async devolver(emprestimoId: number): Promise<void> {
+	async devolver(emprestimoId: string): Promise<void> {
 		await api.post(`/emprestimos/${emprestimoId}/devolver`);
 	},
 

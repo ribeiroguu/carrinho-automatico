@@ -2,7 +2,7 @@ import { supabase } from '../config/supabase'
 import type { FavoritoComLivro } from '../types/database.types'
 
 export class FavoritosService {
-  async getFavoritos(usuario_id: string): Promise<FavoritoComLivro[]> {
+  async getFavoritos(usuario_matricula: string): Promise<FavoritoComLivro[]> {
     const { data, error } = await supabase
       .from('favoritos')
       .select(
@@ -11,7 +11,7 @@ export class FavoritosService {
 				livro:livros (*)
 			`,
       )
-      .eq('usuario_id', usuario_id)
+      .eq('usuario_matricula', usuario_matricula)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -22,14 +22,14 @@ export class FavoritosService {
   }
 
   async addFavorito(
-    usuario_id: string,
-    livro_id: string,
+    usuario_matricula: string,
+    livro_rfid: string,
   ): Promise<{ success: boolean }> {
     // Verifica se o livro existe
     const { data: livro, error: livroError } = await supabase
       .from('livros')
-      .select('id')
-      .eq('id', livro_id)
+      .select('rfid_tag')
+      .eq('rfid_tag', livro_rfid)
       .single()
 
     if (livroError || !livro) {
@@ -40,8 +40,8 @@ export class FavoritosService {
     const { data: existing } = await supabase
       .from('favoritos')
       .select('id')
-      .eq('usuario_id', usuario_id)
-      .eq('livro_id', livro_id)
+      .eq('usuario_matricula', usuario_matricula)
+      .eq('livro_rfid', livro_rfid)
       .single()
 
     if (existing) {
@@ -50,8 +50,8 @@ export class FavoritosService {
 
     // Adiciona aos favoritos
     const { error } = await supabase.from('favoritos').insert({
-      usuario_id,
-      livro_id,
+      usuario_matricula,
+      livro_rfid,
     })
 
     if (error) {
@@ -62,14 +62,14 @@ export class FavoritosService {
   }
 
   async removeFavorito(
-    usuario_id: string,
-    livro_id: string,
+    usuario_matricula: string,
+    livro_rfid: string,
   ): Promise<{ success: boolean }> {
     const { error } = await supabase
       .from('favoritos')
       .delete()
-      .eq('usuario_id', usuario_id)
-      .eq('livro_id', livro_id)
+      .eq('usuario_matricula', usuario_matricula)
+      .eq('livro_rfid', livro_rfid)
 
     if (error) {
       throw new Error(`Erro ao remover favorito: ${error.message}`)
@@ -78,12 +78,12 @@ export class FavoritosService {
     return { success: true }
   }
 
-  async isFavorito(usuario_id: string, livro_id: string): Promise<boolean> {
+  async isFavorito(usuario_matricula: string, livro_rfid: string): Promise<boolean> {
     const { data } = await supabase
       .from('favoritos')
       .select('id')
-      .eq('usuario_id', usuario_id)
-      .eq('livro_id', livro_id)
+      .eq('usuario_matricula', usuario_matricula)
+      .eq('livro_rfid', livro_rfid)
       .single()
 
     return !!data
