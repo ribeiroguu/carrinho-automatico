@@ -26,7 +26,12 @@ export class EmprestimosService {
     usuario_matricula: string,
     page = 1,
     limit = 10,
-  ): Promise<{ historico: EmprestimoComLivro[]; total: number }> {
+  ): Promise<{ 
+    emprestimos: EmprestimoComLivro[]; 
+    total: number;
+    page: number;
+    pages: number;
+  }> {
     const offset = (page - 1) * limit
 
     const { data, error, count } = await supabase
@@ -39,17 +44,21 @@ export class EmprestimosService {
         { count: 'exact' },
       )
       .eq('usuario_matricula', usuario_matricula)
-      .not('data_devolucao', 'is', null)
-      .order('data_devolucao', { ascending: false })
+      .order('data_retirada', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) {
       throw new Error(`Erro ao buscar histórico: ${error.message}`)
     }
 
+    const total = count || 0
+    const pages = Math.ceil(total / limit)
+
     return {
-      historico: data || [],
-      total: count || 0,
+      emprestimos: data || [],
+      total,
+      page,
+      pages,
     }
   }
 

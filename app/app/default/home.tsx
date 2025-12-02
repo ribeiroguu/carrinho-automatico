@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import LogoBibliotech from "@/components/logo";
 import { useBooksStore } from "@/stores/booksStore";
 import { favoritosService } from "@/services/favoritos.service";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Search } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, Text, View, Alert } from "react-native";
@@ -26,8 +26,14 @@ export default function Home() {
 	// Carrega livros e recomendados ao montar
 	useEffect(() => {
 		loadData();
-		loadFavoritos();
 	}, []);
+
+	// Recarrega favoritos sempre que a tela receber foco
+	useFocusEffect(
+		useCallback(() => {
+			loadFavoritos();
+		}, [])
+	);
 
 	const loadData = async () => {
 		try {

@@ -13,6 +13,7 @@ import {
   Modal,
   ScrollView,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import type { Emprestimo, Usuario } from "@/types";
@@ -76,6 +77,14 @@ export default function Profile() {
     } finally {
       setLoadingHistorico(false);
     }
+  };
+
+  const handleCardPress = (livroRfid: string) => {
+    setHistoryModalVisible(false);
+    router.push({
+      pathname: "/livro",
+      params: { id: livroRfid },
+    });
   };
 
   const handleLogout = () => {
@@ -261,8 +270,9 @@ export default function Profile() {
                   </Text>
                 ) : (
                   historico.map((emp) => (
-                    <View
+                    <TouchableOpacity
                       key={emp.id}
+                      onPress={() => handleCardPress(emp.livro.rfid_tag)}
                       style={{
                         padding: 15,
                         borderWidth: 1,
@@ -293,7 +303,7 @@ export default function Profile() {
                       }}>
                         Status: {!emp.data_devolucao ? (emp.atrasado ? 'Atrasado' : 'Ativo') : 'Devolvido'}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   ))
                 )}
               </ScrollView>
