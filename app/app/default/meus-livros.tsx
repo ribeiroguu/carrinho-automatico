@@ -164,8 +164,12 @@ export default function MeusLivros() {
                   title={emprestimo.livro.titulo}
                   author={emprestimo.livro.autor}
                   description={`Vence em: ${new Date(emprestimo.data_devolucao_prevista).toLocaleDateString('pt-BR')} | Renovações: ${emprestimo.renovacoes}/3`}
-                  status={1}
-                  imageSource={require("@/assets/images/logo.png")}
+                  status={emprestimo.status === "atrasado" ? 0 : 1}
+                  imageSource={
+                    emprestimo.livro.capa_url
+                      ? { uri: emprestimo.livro.capa_url }
+                      : require("@/assets/images/logo.png")
+                  }
                   icon1={"recycle"}
                   icon2={"restore"}
                   onIcon1Press={() => handleRenovar(emprestimo.id)}

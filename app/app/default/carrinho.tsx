@@ -28,7 +28,7 @@ export default function Carrinho() {
     stopPolling,
   } = useCartStore();
 
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,9 +47,10 @@ export default function Carrinho() {
   const handleIniciarSessao = async () => {
     try {
       await iniciarSessao();
+      const currentSessao = useCartStore.getState().sessao;
       Alert.alert(
         "Sessão Iniciada",
-        `Código da sessão: ${sessao?.codigo_sessao}\n\nAponte os livros no leitor RFID para adicioná-los ao carrinho.`,
+        `Código da sessão: ${currentSessao?.codigo_sessao}\n\nAponte os livros no leitor RFID para adicioná-los ao carrinho.`,
         [{ text: "OK" }]
       );
       startPolling();
@@ -69,8 +70,8 @@ export default function Carrinho() {
           style: "destructive",
           onPress: async () => {
             try {
-              setRemovingId(livroId.toString());
-              await removerLivro(livroId.toString());
+              setRemovingId(livroId);
+              await removerLivro(livroId);
             } catch (err) {
               Alert.alert("Erro", err instanceof Error ? err.message : "Erro ao remover livro");
             } finally {
@@ -209,13 +210,17 @@ export default function Carrinho() {
                   <BookCard
                     title={livro.titulo}
                     author={livro.autor}
-                    description={livro.sinopse}
-                    status={livro.disponivel ? 1 : 0}
-                    imageSource={require("@/assets/images/logo.png")}
+                    description={livro.sinopse || "Sem descrição"}
+                    status={livro.status === "disponivel" ? 1 : 0}
+                    imageSource={
+                      livro.capa_url
+                        ? { uri: livro.capa_url }
+                        : require("@/assets/images/logo.png")
+                    }
                     icon1={"trash"}
                     onIcon1Press={() => handleRemoverLivro(livro.id)}
                   />
-                  {removingId === livro.id.toString() && (
+                  {removingId === livro.id && (
                     <View
                       style={{
                         position: "absolute",

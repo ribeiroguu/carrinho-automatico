@@ -69,7 +69,7 @@ export default function Profile() {
       setLoadingHistorico(true);
       setHistoryModalVisible(true);
       const data = await emprestimosService.getHistorico();
-      setHistorico(data);
+      setHistorico(data.emprestimos);
     } catch (err) {
       Alert.alert("Erro", err instanceof Error ? err.message : "Erro ao carregar histórico");
       setHistoryModalVisible(false);
@@ -195,13 +195,13 @@ export default function Profile() {
             </Text>
 
             <Input
-              label="Nome"
+              placeholder="Nome"
               value={editForm.nome}
               onChangeText={(text) => setEditForm((prev) => ({ ...prev, nome: text }))}
             />
 
             <Input
-              label="Email"
+              placeholder="Email"
               value={editForm.email}
               onChangeText={(text) => setEditForm((prev) => ({ ...prev, email: text }))}
               keyboardType="email-address"
@@ -285,8 +285,13 @@ export default function Profile() {
                           Devolução: {new Date(emp.data_devolucao_real).toLocaleDateString('pt-BR')}
                         </Text>
                       )}
-                      <Text style={{ fontFamily: "Manrope-Regular", fontSize: 12, color: emp.status === 'ativo' ? '#007AFF' : '#4CAF50', marginTop: 5 }}>
-                        Status: {emp.status === 'ativo' ? 'Ativo' : 'Devolvido'}
+                      <Text style={{ 
+                        fontFamily: "Manrope-Regular", 
+                        fontSize: 12, 
+                        color: emp.status === 'ativo' ? '#007AFF' : (emp.status === 'atrasado' ? '#FF3B30' : '#4CAF50'),
+                        marginTop: 5 
+                      }}>
+                        Status: {emp.status === 'ativo' ? 'Ativo' : (emp.status === 'atrasado' ? 'Atrasado' : 'Devolvido')}
                       </Text>
                     </View>
                   ))

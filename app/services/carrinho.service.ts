@@ -12,13 +12,14 @@ export const carrinhoService = {
 		return response.data.livros;
 	},
 
-	async removerLivro(livroId: string, sessaoId: string): Promise<void> {
+	async removerLivro(livroId: number, sessaoId: string): Promise<void> {
 		await api.delete(`/carrinho/remover/${livroId}`, {
 			data: { sessao_id: sessaoId },
 		});
 	},
 
-	async finalizar(sessaoId: string): Promise<void> {
-		await api.post("/carrinho/finalizar", { sessao_id: sessaoId });
+	async finalizar(sessaoId: string): Promise<{ emprestimos: number[] }> {
+		const response = await api.post("/carrinho/finalizar", { sessao_id: sessaoId });
+		return response.data;
 	},
 };

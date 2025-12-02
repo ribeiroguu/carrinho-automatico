@@ -11,7 +11,7 @@ import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-na
 import type { Livro } from "@/types";
 
 export default function LivroPage() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const [livro, setLivro] = useState<Livro | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +19,10 @@ export default function LivroPage() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
-    loadLivro();
-    checkFavorito();
+    if (id) {
+      loadLivro();
+      checkFavorito();
+    }
   }, [id]);
 
   const loadLivro = async () => {
@@ -86,7 +88,14 @@ export default function LivroPage() {
       resetOnFocus={true}
       style={styles.container}
     >
-      <Image source={require("@/assets/images/logo.png")} style={styles.image} />
+      <Image 
+        source={
+          livro.capa_url
+            ? { uri: livro.capa_url }
+            : require("@/assets/images/logo.png")
+        }
+        style={styles.image} 
+      />
 
       <Text style={styles.title}>{livro.titulo}</Text>
 
@@ -96,16 +105,16 @@ export default function LivroPage() {
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: livro.disponivel ? "#4CAF50" : "#FF5252" },
+            { backgroundColor: livro.status === "disponivel" ? "#4CAF50" : "#FF5252" },
           ]}
         >
           <Text style={styles.statusText}>
-            {livro.disponivel ? "Disponível" : "Indisponível"}
+            {livro.status === "disponivel" ? "Disponível" : "Indisponível"}
           </Text>
         </View>
       </View>
 
-      <Text style={styles.synopsis}>{livro.sinopse}</Text>
+      <Text style={styles.synopsis}>{livro.sinopse || "Sem sinopse disponível"}</Text>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -123,7 +132,7 @@ export default function LivroPage() {
           />
         </TouchableOpacity>
 
-        {livro.disponivel && (
+        {livro.status === "disponivel" && (
           <Button
             variant="primary"
             size="medium"

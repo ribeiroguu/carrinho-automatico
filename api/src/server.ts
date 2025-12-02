@@ -49,7 +49,7 @@ app.setErrorHandler((error, request, reply) => {
 
   return reply.status(500).send({
     error: 'Erro interno do servidor',
-    message: error.message,
+    message: error instanceof Error ? error.message : 'Unknown error',
   })
 })
 

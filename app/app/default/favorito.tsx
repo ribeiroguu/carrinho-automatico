@@ -140,9 +140,13 @@ export default function Favorito() {
               <BookCard
                 title={livro.titulo}
                 author={livro.autor}
-                description={livro.sinopse}
-                status={livro.disponivel ? 1 : 0}
-                imageSource={require("@/assets/images/logo.png")}
+                description={livro.sinopse || "Sem descrição"}
+                status={livro.status === "disponivel" ? 1 : 0}
+                imageSource={
+                  livro.capa_url
+                    ? { uri: livro.capa_url }
+                    : require("@/assets/images/logo.png")
+                }
                 icon1={"heartOff"}
                 onIcon1Press={() => handleRemoveFavorito(livro.id)}
               />

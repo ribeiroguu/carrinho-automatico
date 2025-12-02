@@ -24,7 +24,7 @@ export const usuarioService = {
 	async getStatusMulta(): Promise<{
 		bloqueado: boolean;
 		dias_restantes: number;
-		data_fim_bloqueio: Date | null;
+		data_fim_bloqueio: string | null;
 	}> {
 		const response = await api.get("/usuario/status-multa");
 		return response.data;

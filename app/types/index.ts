@@ -1,15 +1,18 @@
 export interface Usuario {
-	id: string;
+	id: string; // UUID no banco
 	nome: string;
 	matricula: string;
 	email: string;
 	curso: string | null;
 	dias_bloqueado: number;
-	data_fim_bloqueio: Date | null;
+	data_fim_bloqueio: string | null;
+	push_token?: string | null;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface Livro {
-	id: string;
+	id: string; // UUID no banco
 	titulo: string;
 	autor: string;
 	rfid_tag: string;
@@ -17,29 +20,29 @@ export interface Livro {
 	categoria: string | null;
 	sinopse: string | null;
 	status: "disponivel" | "emprestado" | "manutencao";
-	created_at: Date;
-	updated_at: Date;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface Emprestimo {
-	id: string;
-	usuario_id: string;
-	livro_id: string;
-	data_retirada: Date;
-	data_prevista: Date;
-	data_devolucao: Date | null;
+	id: string; // UUID no banco
+	usuario_id: string; // UUID
+	livro_id: string; // UUID
+	data_retirada: string; // data_retirada no banco
+	data_prevista: string; // data_prevista no banco
+	data_devolucao: string | null; // data_devolucao no banco
 	renovacoes: number;
 	atrasado: boolean;
 	dias_atraso: number;
-	created_at: Date;
+	created_at: string;
 	livro: Livro;
 }
 
 export interface Favorito {
-	id: string;
-	usuario_id: string;
-	livro_id: string;
-	created_at: Date;
+	id: string; // UUID no banco
+	usuario_id: string; // UUID
+	livro_id: string; // UUID
+	created_at: string;
 	livro: Livro;
 }
 
@@ -50,7 +53,7 @@ export interface AuthResponse {
 
 export interface CarrinhoSessao {
 	sessao_id: string;
-	codigo: string;
+	codigo_sessao: string;
 }
 
 export interface APIError {

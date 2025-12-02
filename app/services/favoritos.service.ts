@@ -1,22 +1,22 @@
 import api from "./api";
-import type { Favorito } from "@/types";
+import type { Livro } from "@/types";
 
 export const favoritosService = {
-	async getAll(): Promise<Favorito[]> {
+	async listar(): Promise<Livro[]> {
 		const response = await api.get("/favoritos");
 		return response.data.favoritos;
 	},
 
-	async add(livroId: string): Promise<void> {
+	async adicionar(livroId: number): Promise<void> {
 		await api.post(`/favoritos/${livroId}`);
 	},
 
-	async remove(livroId: string): Promise<void> {
+	async remover(livroId: number): Promise<void> {
 		await api.delete(`/favoritos/${livroId}`);
 	},
 
-	async isFavorito(livroId: string): Promise<boolean> {
+	async isFavorito(livroId: number): Promise<{ isFavorito: boolean }> {
 		const response = await api.get(`/favoritos/${livroId}/check`);
-		return response.data.isFavorito;
+		return response.data;
 	},
 };

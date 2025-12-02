@@ -10,16 +10,20 @@ import {
 interface FloatingInputProps extends TextInputProps {
   placeholder: string;
   value?: string;
+  label?: string; // Adiciona label opcional
 }
 
 const FloatingInput: React.FC<FloatingInputProps> = ({
   placeholder,
+  label,
   value,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
   const inputRef = useRef<TextInput>(null);
+
+  const displayText = label || placeholder;
 
   const animateLabel = (toValue: number) => {
     Animated.timing(animatedValue, {
@@ -74,7 +78,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
       <Animated.Text
         style={[styles.placeholder, labelStyle]}
         onPress={() => inputRef.current?.focus()}>
-        {placeholder}
+        {displayText}
       </Animated.Text>
     </View>
   );

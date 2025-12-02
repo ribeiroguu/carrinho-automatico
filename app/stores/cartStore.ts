@@ -11,14 +11,14 @@ interface CartStore {
 	// Actions
 	iniciarSessao: () => Promise<void>;
 	fetchLivros: () => Promise<void>;
-	removerLivro: (livroId: string) => Promise<void>;
+	removerLivro: (livroId: number) => Promise<void>;
 	finalizar: () => Promise<void>;
 	limparSessao: () => void;
 	startPolling: () => void;
 	stopPolling: () => void;
 }
 
-let pollingInterval: NodeJS.Timeout | null = null;
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useCartStore = create<CartStore>((set, get) => ({
 	sessao: null,
@@ -49,7 +49,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
 		}
 	},
 
-	removerLivro: async (livroId: string) => {
+	removerLivro: async (livroId: number) => {
 		const { sessao } = get();
 		if (!sessao) return;
 

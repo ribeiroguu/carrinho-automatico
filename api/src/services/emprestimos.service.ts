@@ -153,10 +153,8 @@ export class EmprestimosService {
       const { error: multaError } = await supabase
         .from('usuarios')
         .update({
-          dias_bloqueado: supabase.raw(`dias_bloqueado + ${diasAtraso}`),
-          data_fim_bloqueio: supabase.raw(
-            `NOW() + INTERVAL '${diasAtraso} days'`,
-          ),
+          dias_bloqueado: diasAtraso,
+          data_fim_bloqueio: new Date(Date.now() + diasAtraso * 24 * 60 * 60 * 1000).toISOString(),
         })
         .eq('id', usuario_id)
 
