@@ -8,6 +8,8 @@ import { favoritosRoutes } from './routes/favoritos.routes'
 import { emprestimosRoutes } from './routes/emprestimos.routes'
 import { carrinhoRoutes } from './routes/carrinho.routes'
 import { usuarioRoutes } from './routes/usuario.routes'
+import { MqttService } from './services/mqtt.service'
+import { esp32Routes } from './routes/esp32.routes'
 
 const app = fastify({
   logger: true,
@@ -42,6 +44,9 @@ app.register(favoritosRoutes, { prefix: '/favoritos' })
 app.register(emprestimosRoutes, { prefix: '/emprestimos' })
 app.register(carrinhoRoutes, { prefix: '/carrinho' })
 app.register(usuarioRoutes, { prefix: '/usuario' })
+app.register(esp32Routes, { prefix: '/esp32' })
+
+const mqttService = new MqttService()
 
 // Handler de erros global
 app.setErrorHandler((error, request, reply) => {
@@ -104,3 +109,11 @@ const start = async () => {
 }
 
 start()
+
+const shutdown = () => {
+  mqttService.disconnect()
+  process.exit(0)
+}
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
