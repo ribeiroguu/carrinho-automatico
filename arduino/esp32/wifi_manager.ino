@@ -88,91 +88,90 @@ void setupWebServer() {
 }
 
 void handleConfigPage() {
-  String html = R"rawliteral(
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configuração Carrinho RFID</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f3f4f6; }
-    .card { background: #fff; max-width: 480px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
-    h1 { font-size: 20px; margin-bottom: 6px; color: #111827; }
-    p { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
-    label { display: block; margin-bottom: 6px; color: #111827; font-weight: 600; font-size: 13px; }
-    input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
-    button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
-    .primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; margin-bottom: 10px; }
-    .secondary { background: #f9fafb; color: #111827; }
-    .info { background: #e0e7ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #312e81; margin-bottom: 18px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>🛒 Carrinho RFID</h1>
-    <p>Configure a conexão WiFi e o broker MQTT.</p>
-    <div class="info">Após salvar, o dispositivo reinicia com as novas configurações.</div>
-    <form id="configForm">
-      <label>Rede WiFi</label>
-      <select id="wifiSsid" name="ssid" required>
-        <option value="">Escaneando redes...</option>
-      </select>
-
-      <label>Senha WiFi</label>
-      <input type="password" name="password" placeholder="Digite a senha" required>
-
-      <label>Servidor MQTT (IP)</label>
-      <input type="text" name="mqtt_server" value="{{MQTT_SERVER}}" required>
-
-      <label>Porta MQTT</label>
-      <input type="number" name="mqtt_port" value="{{MQTT_PORT}}" required>
-
-      <label>Usuário MQTT</label>
-      <input type="text" name="mqtt_user" value="{{MQTT_USER}}" required>
-
-      <label>Senha MQTT</label>
-      <input type="password" name="mqtt_pass" value="{{MQTT_PASS}}" required>
-
-      <button type="submit" class="primary">Salvar e Reiniciar</button>
-      <button type="button" onclick="window.location.reload()" class="secondary">Recarregar</button>
-    </form>
-  </div>
-
-  <script>
-    fetch('/scan')
-      .then(r => r.json())
-      .then(data => {
-        const select = document.getElementById('wifiSsid');
-        select.innerHTML = '<option value="">Selecione uma rede</option>';
-        data.networks.forEach(net => {
-          select.innerHTML += `<option value="${net.ssid}">${net.ssid} (${net.rssi} dBm)</option>`;
-        });
-      });
-
-    document.getElementById('configForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const params = new URLSearchParams(formData);
-
-      const response = await fetch('/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-      });
-
-      if (response.ok) {
-        alert('Configurações salvas. Reiniciando...');
-        setTimeout(() => { window.location.href = '/restart'; }, 1500);
-      } else {
-        alert('Erro ao salvar configurações');
-        window.location.reload();
-      }
-    });
-  </script>
-</body>
-</html>
-)rawliteral");
+  String html =
+    "<!DOCTYPE html>\n"
+    "<html lang=\"pt-BR\">\n"
+    "<head>\n"
+    "  <meta charset=\"UTF-8\">\n"
+    "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+    "  <title>Configuração Carrinho RFID</title>\n"
+    "  <style>\n"
+    "    body { font-family: Arial, sans-serif; padding: 20px; background: #f3f4f6; }\n"
+    "    .card { background: #fff; max-width: 480px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 12px 24px rgba(0,0,0,0.1); }\n"
+    "    h1 { font-size: 20px; margin-bottom: 6px; color: #111827; }\n"
+    "    p { color: #6b7280; margin-bottom: 20px; font-size: 14px; }\n"
+    "    label { display: block; margin-bottom: 6px; color: #111827; font-weight: 600; font-size: 13px; }\n"
+    "    input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }\n"
+    "    button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }\n"
+    "    .primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; margin-bottom: 10px; }\n"
+    "    .secondary { background: #f9fafb; color: #111827; }\n"
+    "    .info { background: #e0e7ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #312e81; margin-bottom: 18px; }\n"
+    "  </style>\n"
+    "</head>\n"
+    "<body>\n"
+    "  <div class=\"card\">\n"
+    "    <h1>🛒 Carrinho RFID</h1>\n"
+    "    <p>Configure a conexão WiFi e o broker MQTT.</p>\n"
+    "    <div class=\"info\">Após salvar, o dispositivo reinicia com as novas configurações.</div>\n"
+    "    <form id=\"configForm\">\n"
+    "      <label>Rede WiFi</label>\n"
+    "      <select id=\"wifiSsid\" name=\"ssid\" required>\n"
+    "        <option value=\"\">Escaneando redes...</option>\n"
+    "      </select>\n"
+    "\n"
+    "      <label>Senha WiFi</label>\n"
+    "      <input type=\"password\" name=\"password\" placeholder=\"Digite a senha\" required>\n"
+    "\n"
+    "      <label>Servidor MQTT (IP)</label>\n"
+    "      <input type=\"text\" name=\"mqtt_server\" value=\"{{MQTT_SERVER}}\" required>\n"
+    "\n"
+    "      <label>Porta MQTT</label>\n"
+    "      <input type=\"number\" name=\"mqtt_port\" value=\"{{MQTT_PORT}}\" required>\n"
+    "\n"
+    "      <label>Usuário MQTT</label>\n"
+    "      <input type=\"text\" name=\"mqtt_user\" value=\"{{MQTT_USER}}\" required>\n"
+    "\n"
+    "      <label>Senha MQTT</label>\n"
+    "      <input type=\"password\" name=\"mqtt_pass\" value=\"{{MQTT_PASS}}\" required>\n"
+    "\n"
+    "      <button type=\"submit\" class=\"primary\">Salvar e Reiniciar</button>\n"
+    "      <button type=\"button\" onclick=\"window.location.reload()\" class=\"secondary\">Recarregar</button>\n"
+    "    </form>\n"
+    "  </div>\n"
+    "\n"
+    "  <script>\n"
+    "    fetch('/scan')\n"
+    "      .then(r => r.json())\n"
+    "      .then(data => {\n"
+    "        const select = document.getElementById('wifiSsid');\n"
+    "        select.innerHTML = '<option value=\"\">Selecione uma rede</option>';\n"
+    "        data.networks.forEach(net => {\n"
+    "          select.innerHTML += `<option value=\"${net.ssid}\">${net.ssid} (${net.rssi} dBm)</option>`;\n"
+    "        });\n"
+    "      });\n"
+    "\n"
+    "    document.getElementById('configForm').addEventListener('submit', async (e) => {\n"
+    "      e.preventDefault();\n"
+    "      const formData = new FormData(e.target);\n"
+    "      const params = new URLSearchParams(formData);\n"
+    "\n"
+    "      const response = await fetch('/save', {\n"
+    "        method: 'POST',\n"
+    "        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n"
+    "        body: params\n"
+    "      });\n"
+    "\n"
+    "      if (response.ok) {\n"
+    "        alert('Configurações salvas. Reiniciando...');\n"
+    "        setTimeout(() => { window.location.href = '/restart'; }, 1500);\n"
+    "      } else {\n"
+    "        alert('Erro ao salvar configurações');\n"
+    "        window.location.reload();\n"
+    "      }\n"
+    "    });\n"
+    "  </script>\n"
+    "</body>\n"
+    "</html>\n";
   html.replace("{{MQTT_SERVER}}", mqttServer);
   html.replace("{{MQTT_PORT}}", String(mqttPort));
   html.replace("{{MQTT_USER}}", mqttUser);
