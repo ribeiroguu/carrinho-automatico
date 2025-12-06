@@ -23,7 +23,7 @@ void loadConfig() {
   mqttUser = preferences.getString("mqtt_user", DEFAULT_MQTT_USER);
   mqttPass = preferences.getString("mqtt_pass", DEFAULT_MQTT_PASS);
 
-  apiBaseUrl = "http://" + mqttServer + ":3333";
+  apiBaseUrl = String("http://") + mqttServer + ":3333";
 }
 
 void saveConfig() {

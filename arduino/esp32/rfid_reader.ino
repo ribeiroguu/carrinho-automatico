@@ -110,7 +110,9 @@ void checkActiveSession() {
     return;
   }
 
-  String sessaoUrl = apiBaseUrl + String(API_ENDPOINT_SESSAO).replace("%s", sessaoCodigo);
+  String endpointSessao = API_ENDPOINT_SESSAO;
+  endpointSessao.replace("%s", sessaoCodigo);
+  String sessaoUrl = apiBaseUrl + endpointSessao;
   http.begin(sessaoUrl);
   httpCode = http.GET();
 
