@@ -88,7 +88,7 @@ void setupWebServer() {
 }
 
 void handleConfigPage() {
-  String html = R"(
+  String html = R"rawliteral(
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -123,16 +123,16 @@ void handleConfigPage() {
       <input type="password" name="password" placeholder="Digite a senha" required>
 
       <label>Servidor MQTT (IP)</label>
-      <input type="text" name="mqtt_server" value=")" + mqttServer + R"(" required>
+      <input type="text" name="mqtt_server" value="{{MQTT_SERVER}}" required>
 
       <label>Porta MQTT</label>
-      <input type="number" name="mqtt_port" value=")" + String(mqttPort) + R"(" required>
+      <input type="number" name="mqtt_port" value="{{MQTT_PORT}}" required>
 
       <label>Usuário MQTT</label>
-      <input type="text" name="mqtt_user" value=")" + mqttUser + R"(" required>
+      <input type="text" name="mqtt_user" value="{{MQTT_USER}}" required>
 
       <label>Senha MQTT</label>
-      <input type="password" name="mqtt_pass" value=")" + mqttPass + R"(" required>
+      <input type="password" name="mqtt_pass" value="{{MQTT_PASS}}" required>
 
       <button type="submit" class="primary">Salvar e Reiniciar</button>
       <button type="button" onclick="window.location.reload()" class="secondary">Recarregar</button>
@@ -172,7 +172,11 @@ void handleConfigPage() {
   </script>
 </body>
 </html>
-  )";
+)rawliteral");
+  html.replace("{{MQTT_SERVER}}", mqttServer);
+  html.replace("{{MQTT_PORT}}", String(mqttPort));
+  html.replace("{{MQTT_USER}}", mqttUser);
+  html.replace("{{MQTT_PASS}}", mqttPass);
 
   webServer.send(200, "text/html", html);
 }

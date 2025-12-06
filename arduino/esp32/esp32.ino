@@ -1,3 +1,4 @@
+// Bibliotecas essenciais 
 #include <SPI.h>
 #include <Wire.h>
 #include <WiFi.h>
