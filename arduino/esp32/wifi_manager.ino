@@ -23,6 +23,7 @@ void loadConfig() {
   mqttUser = preferences.getString("mqtt_user", DEFAULT_MQTT_USER);
   mqttPass = preferences.getString("mqtt_pass", DEFAULT_MQTT_PASS);
 
+  // Mantém esta URL para a comunicação interna (ESP32 -> Backend)
   apiBaseUrl = String("http://") + mqttServer + ":3333";
 }
 
@@ -86,7 +87,6 @@ void setupWebServer() {
     webServer.send(404, "text/plain", "404: Not found");
   });
 }
-
 void handleConfigPage() {
   String html =
     "<!DOCTYPE html>\n"
@@ -112,7 +112,7 @@ void handleConfigPage() {
     "  <div class=\"card\">\n"
     "    <h1>🛒 Carrinho RFID</h1>\n"
     "    <p>Configure a conexão WiFi e o broker MQTT.</p>\n"
-    "    <div class=\"info\">Após salvar, o dispositivo reinicia com as novas configurações.</div>\n"
+    "    <div class=\"info\">Após salvar, o dispositivo reinicia e o aplicativo será aberto automaticamente.</div>\n"
     "    <form id=\"configForm\">\n"
     "      <label>Rede WiFi</label>\n"
     "      <select id=\"wifiSsid\" name=\"ssid\" required>\n"
@@ -139,39 +139,56 @@ void handleConfigPage() {
     "    </form>\n"
     "  </div>\n"
     "\n"
-    "  <script>\n"
-    "    fetch('/scan')\n"
-    "      .then(r => r.json())\n"
-    "      .then(data => {\n"
-    "        const select = document.getElementById('wifiSsid');\n"
-    "        select.innerHTML = '<option value=\"\">Selecione uma rede</option>';\n"
-    "        data.networks.forEach(net => {\n"
-    "          select.innerHTML += `<option value=\"${net.ssid}\">${net.ssid} (${net.rssi} dBm)</option>`;\n"
-    "        });\n"
+    "<script>\n"
+    "  // Carrega redes WiFi\n"
+    "  fetch('/scan')\n"
+    "    .then(r => r.json())\n"
+    "    .then(data => {\n"
+    "      const select = document.getElementById('wifiSsid');\n"
+    "      select.innerHTML = '<option value=\"\">Selecione uma rede</option>';\n"
+    "      data.networks.forEach(net => {\n"
+    "        select.innerHTML += `<option value='${net.ssid}'>${net.ssid} (${net.rssi} dBm)</option>`;\n"
     "      });\n"
-    "\n"
-    "    document.getElementById('configForm').addEventListener('submit', async (e) => {\n"
-    "      e.preventDefault();\n"
-    "      const formData = new FormData(e.target);\n"
-    "      const params = new URLSearchParams(formData);\n"
-    "\n"
-    "      const response = await fetch('/save', {\n"
-    "        method: 'POST',\n"
-    "        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n"
-    "        body: params\n"
-    "      });\n"
-    "\n"
-    "      if (response.ok) {\n"
-    "        alert('Configurações salvas. Reiniciando...');\n"
-    "        setTimeout(() => { window.location.href = '/restart'; }, 1500);\n"
-    "      } else {\n"
-    "        alert('Erro ao salvar configurações');\n"
-    "        window.location.reload();\n"
-    "      }\n"
     "    });\n"
-    "  </script>\n"
+    "\n"
+    "  // Ao enviar o formulário\n"
+    "  document.getElementById('configForm').addEventListener('submit', async (e) => {\n"
+    "    e.preventDefault();\n"
+    "    const formData = new FormData(e.target);\n"
+    "    const params = new URLSearchParams(formData);\n"
+    "\n"
+    "    const response = await fetch('/save', {\n"
+    "      method: 'POST',\n"
+    "      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n"
+    "      body: params\n"
+    "    });\n"
+    "\n"
+    "    if (response.ok) {\n"
+    "      alert('Configurações salvas! Reiniciando e abrindo o app...');\n"
+    "\n"
+    "      const deep = 'carrinhoautomaticofrontend://';\n" //redirecionamento marcão 
+    "\n"
+    "      // Tentar abrir via iframe (100% funcional)\n"
+    "      const iframe = document.createElement('iframe');\n"
+    "      iframe.style.display = 'none';\n"
+    "      iframe.src = deep;\n"
+    "      document.body.appendChild(iframe);\n"
+    "\n"
+    "      // Se falhar, evita travamento\n"
+    "      setTimeout(() => {\n"
+    "        window.location = deep;\n"
+    "      }, 1200);\n"
+    "\n"
+    "    } else {\n"
+    "      alert('Erro ao salvar configurações');\n"
+    "      window.location.reload();\n"
+    "    }\n"
+    "  });\n"
+    "</script>\n"
+    "\n"
     "</body>\n"
     "</html>\n";
+
   html.replace("{{MQTT_SERVER}}", mqttServer);
   html.replace("{{MQTT_PORT}}", String(mqttPort));
   html.replace("{{MQTT_USER}}", mqttUser);
@@ -179,6 +196,7 @@ void handleConfigPage() {
 
   webServer.send(200, "text/html", html);
 }
+
 
 void handleScanNetworks() {
   int n = WiFi.scanNetworks();
@@ -222,6 +240,10 @@ void handleSaveConfig() {
 
   saveConfig();
   webServer.send(200, "text/plain", "OK");
+  
+  // AÇÃO ALTERADA: Reiniciar imediatamente após salvar e enviar a resposta
+  delay(500);
+  ESP.restart();
 }
 
 void handleRestart() {

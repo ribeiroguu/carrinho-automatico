@@ -32,7 +32,16 @@ const char* WIFI_SSID = "SUA_REDE_WIFI";
 const char* WIFI_PASSWORD = "SUA_SENHA_WIFI";
 
 // --- Pinos para o Leitor RFID MFRC522 (Interface SPI) ---
+<<<<<<< HEAD:esp-test/esp32_rfid_oled.ino
 #define RST_PIN  4  // Pino de Reset do RC522
+=======
+// A ligação padrão para ESP32 com SPI (VSPI) é:
+// - SCK:  GPIO 18
+// - MISO: GPIO 19
+// - MOSI: GPIO 23
+// Os pinos RST e SS (SDA) podem ser definidos para qualquer GPIO.
+#define RST_PIN  2  // Pino de Reset do RC522
+>>>>>>> 85098f5d64b387d722899901f5a61eebfbb9d092:esp-test/esp32_rfid_oled/esp32_rfid_oled.ino
 #define SS_PIN   5  // Pino SS/SDA (Slave Select) do RC522
 
 // --- Configurações do Display OLED (Interface I2C) ---
