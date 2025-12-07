@@ -30,7 +30,7 @@
 // - MISO: GPIO 19
 // - MOSI: GPIO 23
 // Os pinos RST e SS (SDA) podem ser definidos para qualquer GPIO.
-#define RST_PIN  4  // Pino de Reset do RC522
+#define RST_PIN  2  // Pino de Reset do RC522
 #define SS_PIN   5  // Pino SS/SDA (Slave Select) do RC522
 
 // --- Configurações do Display OLED (Interface I2C) ---
