@@ -37,7 +37,7 @@
 // ===================================
 // MQTT SETTINGS (DEFAULTS)
 // ===================================
-#define DEFAULT_MQTT_SERVER "192.168.0.100"
+#define DEFAULT_MQTT_SERVER "192.168.1.12"
 #define DEFAULT_MQTT_PORT 1883
 #define DEFAULT_MQTT_USER "biblioteca_esp32"
 #define DEFAULT_MQTT_PASS "ESP32#Lib@2024!"
