@@ -2,40 +2,18 @@ import type { FastifyInstance } from 'fastify'
 import { CarrinhoService } from '../services/carrinho.service'
 import { validateBody } from '../middlewares/validate'
 import { authMiddleware } from '../middlewares/auth'
-import { validateBody } from '../middlewares/validate'
 import {
   finalizarCarrinhoSchema,
   rfidLeituraSchema,
-  associarRfidSchema,
 } from '../utils/validation'
 import type {
   AuthRequest,
   FinalizarCarrinhoBody,
   RFIDLeituraBody,
-  AssociarRfidBody,
 } from '../types/api.types'
 
 export async function carrinhoRoutes(fastify: FastifyInstance) {
   const carrinhoService = new CarrinhoService()
-
-  // Associar RFID a um carrinho
-  fastify.post(
-    '/rfid',
-    {
-      preHandler: validateBody(associarRfidSchema),
-    },
-    async (request, reply) => {
-      try {
-        const { rfid } = request.body as AssociarRfidBody
-        const carrinho = await carrinhoService.associarCarrinhoRfid(rfid)
-        return reply.send(carrinho)
-      } catch (error: any) {
-        return reply.status(400).send({
-          error: error.message,
-        })
-      }
-    },
-  )
 
   // Iniciar sessão do carrinho
   fastify.post(
@@ -57,6 +35,25 @@ export async function carrinhoRoutes(fastify: FastifyInstance) {
       }
     },
   )
+
+  // ESP32 busca sessão ativa (sem autenticação - apenas rede local)
+  fastify.get('/sessao-ativa', async (request, reply) => {
+    try {
+      const sessaoAtiva = await carrinhoService.getSessaoAtiva()
+      
+      if (!sessaoAtiva) {
+        return reply.status(404).send({
+          error: 'Nenhuma sessão ativa no momento',
+        })
+      }
+      
+      return reply.send(sessaoAtiva)
+    } catch (error: any) {
+      return reply.status(500).send({
+        error: error.message,
+      })
+    }
+  })
 
   // Receber leitura RFID (chamado pelo ESP32)
   fastify.post(

@@ -34,8 +34,11 @@ const char* WIFI_PASSWORD = "rona652307";
 
 // --- Configurações do Servidor ---
 // IMPORTANTE: Substitua pelo IP da máquina onde o servidor está rodando
-const char* SERVER_IP = "192.168.1.10"; // Exemplo: "192.168.0.10"
-const int SERVER_PORT = 3000;
+const char* SERVER_IP = "192.168.15.243"; // IP da sua máquina
+const int SERVER_PORT = 3333;
+
+// --- Variável Global para Sessão ---
+String sessaoAtiva = "";  // Armazena o sessao_id ativo
 
 // --- Pinos para o Leitor RFID MFRC522 (Interface SPI) ---
 #define RST_PIN  2 // Pino de Reset do RC522
@@ -148,57 +151,147 @@ String uidToString(byte* buffer, byte bufferSize) {
 }
 
 /**
- * @brief Envia o UID lido para o servidor via HTTP POST.
- * 
- * @param uid O UID do cartão a ser enviado.
+ * @brief Obtém a sessão ativa do servidor.
  */
-void enviarUIDParaServidor(String uid) {
-  // Verifica se o Wi-Fi está conectado antes de tentar enviar
+void obterSessaoDoServidor() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Wi-Fi desconectado. Nao foi possivel enviar o UID.");
+    Serial.println("Wi-Fi desconectado. Aguardando conexao...");
+    showMessageOnOLED("Sem Wi-Fi", "Aguardando...");
+    return;
+  }
+
+  Serial.println("Obtendo sessao ativa do servidor...");
+  showMessageOnOLED("Buscando", "sessao ativa...");
+
+  HTTPClient http;
+  String serverUrl = "http://" + String(SERVER_IP) + ":" + String(SERVER_PORT) + "/carrinhos/sessao-ativa";
+  http.begin(serverUrl);
+  http.setTimeout(5000);
+
+  int httpResponseCode = http.GET();
+  
+  if (httpResponseCode == 200) {
+    String responsePayload = http.getString();
+    Serial.println("Resposta do servidor: " + responsePayload);
+    
+    // Parse JSON simples para extrair sessao_id
+    // Formato esperado: {"sessao_id":"2023001_1234567890","codigo":"123456"}
+    int inicio = responsePayload.indexOf("\"sessao_id\":\"") + 13;
+    int fim = responsePayload.indexOf("\"", inicio);
+    
+    if (inicio > 12 && fim > inicio) {
+      sessaoAtiva = responsePayload.substring(inicio, fim);
+      Serial.println("Sessao obtida: " + sessaoAtiva);
+      
+      // Extrai e mostra o código
+      int inicioCode = responsePayload.indexOf("\"codigo\":\"") + 10;
+      int fimCode = responsePayload.indexOf("\"", inicioCode);
+      String codigo = responsePayload.substring(inicioCode, fimCode);
+      
+      showMessageOnOLED("Sessao Ativa:", codigo);
+      Serial.println("Codigo da sessao: " + codigo);
+    } else {
+      Serial.println("Erro ao extrair sessao_id do JSON");
+      showMessageOnOLED("Erro JSON", "Tentando...");
+      sessaoAtiva = "";
+    }
+  } else if (httpResponseCode == 404) {
+    Serial.println("Nenhuma sessao ativa no momento");
+    showMessageOnOLED("Sem sessao ativa", "Inicie no app");
+    sessaoAtiva = "";
+  } else {
+    Serial.printf("Erro ao obter sessao. Codigo: %d\n", httpResponseCode);
+    showMessageOnOLED("Erro na busca", "Tentando...");
+    sessaoAtiva = "";
+  }
+  
+  http.end();
+  delay(2000);
+}
+
+/**
+ * @brief Envia o RFID do livro para o servidor via HTTP POST.
+ * 
+ * @param rfidLivro O RFID do livro lido a ser enviado.
+ */
+void enviarLivroParaServidor(String rfidLivro) {
+  // Verifica se há sessão ativa
+  if (sessaoAtiva == "") {
+    Serial.println("Nenhuma sessao ativa. Buscando...");
+    showMessageOnOLED("Sem sessao!", "Aguarde...");
+    obterSessaoDoServidor();
+    
+    if (sessaoAtiva == "") {
+      showMessageOnOLED("Erro:", "Inicie no app");
+      delay(2000);
+      return;
+    }
+  }
+
+  // Verifica Wi-Fi
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Wi-Fi desconectado. Nao enviado.");
     showMessageOnOLED("Erro de Wi-Fi", "Nao enviado");
     delay(1500);
     return;
   }
 
-  Serial.print("Enviando UID para o servidor: ");
-  Serial.println(uid);
-  showMessageOnOLED("Enviando UID...", uid);
+  Serial.print("Enviando livro para sessao: ");
+  Serial.println(sessaoAtiva);
+  Serial.print("RFID do livro: ");
+  Serial.println(rfidLivro);
+  showMessageOnOLED("Enviando livro...", rfidLivro);
 
   HTTPClient http;
   
-  // Monta a URL do endpoint do servidor
-  String serverUrl = "http://" + String(SERVER_IP) + ":" + String(SERVER_PORT) + "/carrinhos/rfid";
+  // Endpoint correto
+  String serverUrl = "http://" + String(SERVER_IP) + ":" + String(SERVER_PORT) + "/carrinhos/rfid-leitura";
   http.begin(serverUrl);
-  
-  // Define o cabeçalho da requisição como JSON
   http.addHeader("Content-Type", "application/json");
+  http.setTimeout(5000);
   
-  // Monta o corpo (payload) da requisição em formato JSON
-  String jsonPayload = "{\"rfid\":\"" + uid + "\"}";
+  // Payload correto
+  String jsonPayload = "{\"sessao_id\":\"" + sessaoAtiva + "\",\"rfid_tag\":\"" + rfidLivro + "\"}";
+  Serial.print("Payload: ");
+  Serial.println(jsonPayload);
   
-  // Envia a requisição POST e obtém o código de resposta
   int httpResponseCode = http.POST(jsonPayload);
   
   if (httpResponseCode > 0) {
     String responsePayload = http.getString();
-    Serial.printf("Servidor respondeu com codigo: %d\n", httpResponseCode);
-    Serial.printf("Resposta: %s\n", responsePayload.c_str());
+    Serial.printf("Servidor respondeu: %d\n", httpResponseCode);
+    Serial.print("Resposta: ");
+    Serial.println(responsePayload);
     
     if (httpResponseCode == 200) {
-      showMessageOnOLED("Servidor OK", "UID Enviado!");
+      // Livro adicionado com sucesso
+      showMessageOnOLED("Livro OK!", "Adicionado");
+    } else if (httpResponseCode == 400) {
+      // Possível erro: limite atingido, livro indisponível, sessão inválida
+      if (responsePayload.indexOf("sessao") > -1 || responsePayload.indexOf("Sessao") > -1) {
+        // Sessão expirou ou é inválida - limpar e buscar nova
+        sessaoAtiva = "";
+        showMessageOnOLED("Sessao invalida", "Recarregando...");
+        delay(1000);
+        obterSessaoDoServidor();
+      } else if (responsePayload.indexOf("Limite") > -1 || responsePayload.indexOf("limite") > -1) {
+        showMessageOnOLED("Limite atingido", "3 livros max");
+      } else if (responsePayload.indexOf("disponivel") > -1) {
+        showMessageOnOLED("Livro", "indisponivel");
+      } else {
+        showMessageOnOLED("Erro:", "Ver app");
+      }
     } else {
-      showMessageOnOLED("Erro no Servidor", "Codigo: " + String(httpResponseCode));
+      showMessageOnOLED("Erro Servidor", "Cod:" + String(httpResponseCode));
     }
-    
   } else {
-    Serial.printf("Falha no envio. Codigo de erro: %s\n", http.errorToString(httpResponseCode).c_str());
-    showMessageOnOLED("Falha no Envio", http.errorToString(httpResponseCode).c_str());
+    Serial.print("Falha no envio: ");
+    Serial.println(http.errorToString(httpResponseCode));
+    showMessageOnOLED("Falha Envio", "Rede?");
   }
   
-  // Libera os recursos do cliente HTTP
   http.end();
-  delay(1500); // Aguarda para a mensagem ser lida
+  delay(2000);
 }
 
 // =============================================================================
@@ -217,36 +310,56 @@ void setup() {
   
   conectarWiFi(); // Conecta ao Wi-Fi antes de iniciar o loop principal
 
-  showMessageOnOLED("Sistema Pronto", "Aproxime o cartao");
-  Serial.println(F("Sistema pronto. Aproxime um cartao RFID."));
+  // Buscar sessão ativa ao iniciar
+  obterSessaoDoServidor();
+
+  if (sessaoAtiva != "") {
+    showMessageOnOLED("Pronto!", "Aproxime livro");
+  } else {
+    showMessageOnOLED("Sistema Pronto", "Inicie no app");
+  }
+  Serial.println(F("Sistema pronto. Aproxime um livro RFID."));
 }
 
 void loop() {
-  // Se o Wi-Fi cair, tenta reconectar
+  // Reconecta Wi-Fi se necessário
   if (WiFi.status() != WL_CONNECTED) {
     conectarWiFi();
   }
 
-  // Procura por um novo cartão RFID
+  // A cada 10 segundos, verifica se há sessão ativa
+  static unsigned long ultimaVerificacao = 0;
+  if (millis() - ultimaVerificacao > 10000) {
+    ultimaVerificacao = millis();
+    if (sessaoAtiva == "") {
+      obterSessaoDoServidor();
+    }
+  }
+
+  // Procura por cartão RFID (livro)
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
-    
-    String uid = uidToString(mfrc522.uid.uidByte, mfrc522.uid.size);
+    String rfidLivro = uidToString(mfrc522.uid.uidByte, mfrc522.uid.size);
 
-    Serial.print(F("Cartao detectado! UID: "));
-    Serial.println(uid);
+    Serial.print(F("Livro detectado! RFID: "));
+    Serial.println(rfidLivro);
 
-    showMessageOnOLED("Cartao detectado:", uid);
-    delay(1000);
+    showMessageOnOLED("Livro detectado:", rfidLivro);
+    delay(800);
 
-    // Chama a função que envia o UID para o servidor
-    enviarUIDParaServidor(uid);
+    // Envia para o servidor
+    enviarLivroParaServidor(rfidLivro);
 
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
+    delay(1000);
 
-    delay(CARD_DETECT_DELAY);
-
-    showMessageOnOLED("Sistema Pronto", "Aproxime o cartao");
-    Serial.println(F("\nAguardando novo cartao..."));
+    // Volta à tela de espera
+    if (sessaoAtiva != "") {
+      showMessageOnOLED("Pronto", "Proximo livro");
+    } else {
+      showMessageOnOLED("Sistema Pronto", "Inicie no app");
+    }
+    
+    Serial.println(F("\nAguardando proximo livro..."));
   }
 }

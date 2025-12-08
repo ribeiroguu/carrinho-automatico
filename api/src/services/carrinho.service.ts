@@ -7,7 +7,12 @@ export class CarrinhoService {
   private livrosService = new LivrosService()
   private emprestimosService = new EmprestimosService()
 
-
+  // Armazena a sessão ativa em memória (simples para 1 carrinho)
+  private sessaoAtiva: { 
+    sessao_id: string
+    codigo: string
+    timestamp: number 
+  } | null = null
 
   // Gera código aleatório de 6 dígitos
   private gerarCodigo(): string {
@@ -21,10 +26,37 @@ export class CarrinhoService {
     const codigo = this.gerarCodigo()
     const sessao_id = `${usuario_matricula}_${Date.now()}`
 
+    // Armazena a sessão como ativa
+    this.sessaoAtiva = {
+      sessao_id,
+      codigo,
+      timestamp: Date.now()
+    }
+
     return {
       sessao_id,
       codigo,
     }
+  }
+
+  async getSessaoAtiva(): Promise<{ sessao_id: string; codigo: string } | null> {
+    // Verifica se há sessão ativa e se não expirou (1 hora)
+    if (this.sessaoAtiva) {
+      const umHoraEmMs = 60 * 60 * 1000
+      const agora = Date.now()
+      
+      if (agora - this.sessaoAtiva.timestamp < umHoraEmMs) {
+        return {
+          sessao_id: this.sessaoAtiva.sessao_id,
+          codigo: this.sessaoAtiva.codigo
+        }
+      } else {
+        // Sessão expirou
+        this.sessaoAtiva = null
+      }
+    }
+    
+    return null
   }
 
   async addLeituraRFID(
@@ -190,6 +222,11 @@ export class CarrinhoService {
 
     if (updateError) {
       throw new Error(`Erro ao finalizar carrinho: ${updateError.message}`)
+    }
+
+    // Limpa a sessão ativa se for a que está sendo finalizada
+    if (this.sessaoAtiva?.sessao_id === sessao_id) {
+      this.sessaoAtiva = null
     }
 
     return { success: true }
