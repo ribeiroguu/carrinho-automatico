@@ -1,7 +1,7 @@
 /*
  * Projeto: Leitor RFID com Display OLED e Conexão Wi-Fi no ESP32
  * Autor: [Seu Nome/Empresa]
- * Data: 07/12/2025
+ * Data: 08/12/2025
  * 
  * Descrição:
  * Este código realiza a leitura de tags/cartões RFID, exibe o UID em um display OLED,
@@ -10,6 +10,8 @@
  * O código foi atualizado para incluir:
  * - Conexão Wi-Fi com status exibido no OLED e Serial.
  * - Envio do UID para um servidor via requisição HTTP POST.
+ * - Lógica de sessão para carrinho de compras.
+ * - Tratamento de erro para display OLED opcional.
  */
 
 // =============================================================================
@@ -55,6 +57,7 @@ bool oledDisponivel = false;  // Flag para indicar se OLED está funcionando
 // --- Outras Constantes ---
 #define SERIAL_BAUD_RATE 115200 // Taxa de comunicação para o Serial Monitor
 #define CARD_DETECT_DELAY 2000  // Tempo (em ms) que o UID fica na tela após detecção
+#define SESSION_CHECK_INTERVAL 10000 // Intervalo para verificar sessão (ms)
 
 // =============================================================================
 // Instâncias de Objetos
@@ -359,22 +362,17 @@ void loop() {
     conectarWiFi();
   }
 
-  // Busca sessão na primeira vez e depois a cada 10 segundos
-  static unsigned long ultimaVerificacao = 0;
+  // Busca sessão na primeira vez e depois periodicamente se não houver sessão
+  static unsigned long ultimaVerificacaoSessao = 0;
   static bool primeiraVez = true;
   
-  // Verifica imediatamente na primeira vez, depois a cada 10s
-  if (primeiraVez || (millis() - ultimaVerificacao > 10000)) {
-    ultimaVerificacao = millis();
-    
+  if (primeiraVez || (sessaoAtiva == "" && (millis() - ultimaVerificacaoSessao > SESSION_CHECK_INTERVAL))) {
     if (primeiraVez) {
       Serial.println(F("\n--- Buscando sessao ativa pela primeira vez ---"));
       primeiraVez = false;
     }
-    
-    if (sessaoAtiva == "") {
-      obterSessaoDoServidor();
-    }
+    obterSessaoDoServidor();
+    ultimaVerificacaoSessao = millis();
   }
 
   // Procura por cartão RFID (livro)
@@ -394,43 +392,6 @@ void loop() {
     mfrc522.PCD_StopCrypto1();
     delay(1000);
 
-    if (sessaoAtiva != "") {
-      showMessageOnOLED("Pronto", "Proximo livro");
-    } else {
-      showMessageOnOLED("Sistema Pronto", "Inicie no app");
-    }
-    
-    Serial.println(F("\nAguardando proximo livro..."));
-  }
-}
-
-  // A cada 10 segundos, verifica se há sessão ativa
-  static unsigned long ultimaVerificacao = 0;
-  if (millis() - ultimaVerificacao > 10000) {
-    ultimaVerificacao = millis();
-    if (sessaoAtiva == "") {
-      obterSessaoDoServidor();
-    }
-  }
-
-  // Procura por cartão RFID (livro)
-  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
-    String rfidLivro = uidToString(mfrc522.uid.uidByte, mfrc522.uid.size);
-
-    Serial.print(F("Livro detectado! RFID: "));
-    Serial.println(rfidLivro);
-
-    showMessageOnOLED("Livro detectado:", rfidLivro);
-    delay(800);
-
-    // Envia para o servidor
-    enviarLivroParaServidor(rfidLivro);
-
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
-    delay(1000);
-
-    // Volta à tela de espera
     if (sessaoAtiva != "") {
       showMessageOnOLED("Pronto", "Proximo livro");
     } else {
