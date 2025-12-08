@@ -356,26 +356,26 @@ void setup() {
 }
 
 void loop() {
-  // Reconecta Wi-Fi se necessário
+  // 1. Garante que o Wi-Fi esteja conectado
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println(F("Wi-Fi desconectado! Tentando reconectar..."));
+    showMessageOnOLED("Reconectando", "Wi-Fi...");
     conectarWiFi();
-  }
-
-  // Busca sessão na primeira vez e depois periodicamente se não houver sessão
-  static unsigned long ultimaVerificacaoSessao = 0;
-  static bool primeiraVez = true;
-  
-  if (primeiraVez || (sessaoAtiva == "" && (millis() - ultimaVerificacaoSessao > SESSION_CHECK_INTERVAL))) {
-    if (primeiraVez) {
-      Serial.println(F("\n--- Buscando sessao ativa pela primeira vez ---"));
-      primeiraVez = false;
+    // Se a conexão falhar, reinicia o loop para tentar novamente
+    if (WiFi.status() != WL_CONNECTED) {
+      return;
     }
-    obterSessaoDoServidor();
-    ultimaVerificacaoSessao = millis();
   }
 
-  // Procura por cartão RFID (livro)
+  // 2. Verifica periodicamente a sessão com o servidor
+  static unsigned long ultimaVerificacaoSessao = 0;
+  if (millis() - ultimaVerificacaoSessao > SESSION_CHECK_INTERVAL) {
+    ultimaVerificacaoSessao = millis();
+    Serial.println(F("\n--- Verificando status da sessao no servidor ---"));
+    obterSessaoDoServidor();
+  }
+
+  // 3. Procura por um novo cartão RFID (livro)
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     String rfidLivro = uidToString(mfrc522.uid.uidByte, mfrc522.uid.size);
 
@@ -386,12 +386,15 @@ void loop() {
     showMessageOnOLED("Livro detectado:", rfidLivro);
     delay(800);
 
+    // Envia o livro para o servidor (a função interna já verifica a sessão)
     enviarLivroParaServidor(rfidLivro);
 
+    // Para a leitura para evitar múltiplas detecções do mesmo cartão
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
-    delay(1000);
+    delay(1000); // Pequena pausa antes de voltar ao estado de espera
 
+    // Atualiza a tela com o status atual
     if (sessaoAtiva != "") {
       showMessageOnOLED("Pronto", "Proximo livro");
     } else {

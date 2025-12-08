@@ -3,12 +3,12 @@ import type { CarrinhoSessao, Livro } from "@/types";
 
 export const carrinhoService = {
 	async iniciarSessao(): Promise<CarrinhoSessao> {
-		const response = await api.post("/carrinho/iniciar-sessao");
+		const response = await api.post("/carrinhos/iniciar-sessao");
 		return response.data;
 	},
 
 	async getLivrosCarrinho(sessaoId: string): Promise<Livro[]> {
-		const response = await api.get(`/carrinho/sessao/${sessaoId}`);
+		const response = await api.get(`/carrinhos/sessao/${sessaoId}`);
 		return response.data.livros;
 	},
 

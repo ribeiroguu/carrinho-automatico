@@ -23,14 +23,23 @@ export class CarrinhoService {
     sessao_id: string
     codigo: string
   }> {
+    // 1. Verifica se já existe uma sessão ativa e válida
+    const sessaoExistente = await this.getSessaoAtiva()
+    if (sessaoExistente) {
+      console.log('Retornando sessão já ativa:', sessaoExistente.sessao_id)
+      return sessaoExistente
+    }
+
+    // 2. Se não houver, cria uma nova
+    console.log('Criando uma nova sessão para:', usuario_matricula)
     const codigo = this.gerarCodigo()
     const sessao_id = `${usuario_matricula}_${Date.now()}`
 
-    // Armazena a sessão como ativa
+    // Armazena a nova sessão como ativa
     this.sessaoAtiva = {
       sessao_id,
       codigo,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
 
     return {
@@ -138,7 +147,7 @@ export class CarrinhoService {
       .select(
         `
 				*,
-				livro:livros (*)
+				livros:livros (*)
 			`,
       )
       .eq('sessao_id', sessao_id)
@@ -149,7 +158,7 @@ export class CarrinhoService {
       throw new Error(`Erro ao buscar livros do carrinho: ${error.message}`)
     }
 
-    return (data || []).map((item: any) => item.livro)
+    return (data || []).map((item: any) => item.livros)
   }
 
   async removerLivro(

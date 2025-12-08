@@ -51,7 +51,7 @@ export default function Carrinho() {
       const currentSessao = useCartStore.getState().sessao;
       Alert.alert(
         "Sessão Iniciada",
-        `Código da sessão: ${currentSessao?.codigo_sessao}\n\nAponte os livros no leitor RFID para adicioná-los ao carrinho.`,
+        `Código da sessão: ${currentSessao?.codigo}\n\nAponte os livros no leitor RFID para adicioná-los ao carrinho.`,
         [{ text: "OK" }]
       );
       startPolling();
@@ -169,7 +169,7 @@ export default function Carrinho() {
         {sessao && (
           <View style={{ alignItems: "center", gap: 5 }}>
             <Text style={{ fontFamily: "Manrope-Bold", fontSize: 32, color: "#007AFF" }}>
-              {sessao.codigo_sessao}
+              {sessao.codigo}
             </Text>
             <Text style={{ fontFamily: "Manrope-Regular", fontSize: 12, color: "#666" }}>
               Código da sessão {isPolling && "• Atualizando..."}
