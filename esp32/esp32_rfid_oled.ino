@@ -222,6 +222,12 @@ void obterSessaoDoServidor() {
 
       showMessageOnOLED("Sessao Ativa:", codigo);
       Serial.println("Codigo da sessao: " + codigo);
+      delay(3000); // Mostra o código por 3 segundos
+
+      // Instrui o usuário sobre o próximo passo
+      showMessageOnOLED("Aproxime o livro", "do leitor");
+      Serial.println("Aguardando aproximacao de livro...");
+
     } else {
       Serial.println("Erro ao extrair sessao_id do JSON");
       showMessageOnOLED("Erro JSON", "Tentando...");
@@ -238,7 +244,6 @@ void obterSessaoDoServidor() {
   }
 
   http.end();
-  delay(2000);
 }
 
 /**
