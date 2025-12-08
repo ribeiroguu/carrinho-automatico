@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { CarrinhoService } from '../services/carrinho.service'
+import { validateBody } from '../middlewares/validate'
 import { authMiddleware } from '../middlewares/auth'
+import { validateBody } from '../middlewares/validate'
 import {
   finalizarCarrinhoSchema,
   rfidLeituraSchema,

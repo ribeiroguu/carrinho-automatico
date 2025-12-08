@@ -40,7 +40,7 @@ app.register(authRoutes, { prefix: '/auth' })
 app.register(livrosRoutes, { prefix: '/livros' })
 app.register(favoritosRoutes, { prefix: '/favoritos' })
 app.register(emprestimosRoutes, { prefix: '/emprestimos' })
-app.register(carrinhoRoutes, { prefix: '/carrinho' })
+app.register(carrinhoRoutes, { prefix: '/carrinhos' })
 app.register(usuarioRoutes, { prefix: '/usuario' })
 
 // Handler de erros global

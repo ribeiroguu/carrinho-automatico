@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nome VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   senha_hash VARCHAR(255) NOT NULL,
+  rfid_usuario VARCHAR(255) UNIQUE,
   curso VARCHAR(100),
   dias_bloqueado INTEGER DEFAULT 0,
   data_fim_bloqueio DATE,
@@ -20,6 +21,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+COMMENT ON COLUMN public.usuarios.rfid_usuario IS 'Tag RFID única para identificação do usuário no carrinho.';
 
 -- =====================================================
 -- TABELA: livros

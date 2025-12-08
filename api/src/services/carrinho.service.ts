@@ -7,19 +7,7 @@ export class CarrinhoService {
   private livrosService = new LivrosService()
   private emprestimosService = new EmprestimosService()
 
-  async associarCarrinhoRfid(rfid: string) {
-    const { data, error } = await supabase
-      .from('carrinhos')
-      .select('*')
-      .eq('rfid', rfid)
-      .single()
 
-    if (error) {
-      throw new Error('Carrinho não encontrado')
-    }
-
-    return data
-  }
 
   // Gera código aleatório de 6 dígitos
   private gerarCodigo(): string {
