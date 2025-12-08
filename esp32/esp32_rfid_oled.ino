@@ -40,6 +40,9 @@ const int SERVER_PORT = 3333;
 // --- Variável Global para Sessão ---
 String sessaoAtiva = "";  // Armazena o sessao_id ativo
 
+// --- Variável Global para Status do OLED ---
+bool oledDisponivel = false;  // Flag para indicar se OLED está funcionando
+
 // --- Pinos para o Leitor RFID MFRC522 (Interface SPI) ---
 #define RST_PIN  2 // Pino de Reset do RC522
 #define SS_PIN   5  // Pino SS/SDA (Slave Select) do RC522
@@ -68,6 +71,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
  * @brief Exibe uma mensagem centralizada no display OLED.
  */
 void showMessageOnOLED(const String& line1, const String& line2 = "") {
+  // Não faz nada se OLED não está disponível
+  if (!oledDisponivel) {
+    return;
+  }
+  
   display.clearDisplay();
   display.setTextSize(1);
   
@@ -88,13 +96,26 @@ void showMessageOnOLED(const String& line1, const String& line2 = "") {
  * @brief Inicializa o display OLED.
  */
 void initOLED() {
+  Serial.println(F("Inicializando display OLED..."));
+  
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
-    Serial.println(F("Falha ao iniciar display OLED."));
-    while (true);
+    Serial.println(F("========================================"));
+    Serial.println(F("AVISO: Falha ao iniciar display OLED."));
+    Serial.println(F("Verifique:"));
+    Serial.println(F("  - Conexao dos pinos SDA/SCL"));
+    Serial.println(F("  - Alimentacao VCC/GND"));
+    Serial.println(F("  - Endereco I2C (atual: 0x3C)"));
+    Serial.println(F("Sistema continuara sem display."));
+    Serial.println(F("========================================"));
+    oledDisponivel = false;
+    return;  // Sai sem travar
   }
+  
+  oledDisponivel = true;
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.display();
+  Serial.println(F("Display OLED inicializado com sucesso!"));
 }
 
 /**
@@ -111,7 +132,9 @@ void initRFID() {
  * @brief Conecta-se à rede Wi-Fi.
  */
 void conectarWiFi() {
-  Serial.println("Conectando ao Wi-Fi...");
+  Serial.println(F("\n--- Conectando ao Wi-Fi ---"));
+  Serial.print(F("SSID: "));
+  Serial.println(WIFI_SSID);
   showMessageOnOLED("Conectando Wi-Fi...");
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -122,17 +145,23 @@ void conectarWiFi() {
     Serial.print(".");
     tentativas++;
   }
+  Serial.println();
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWi-Fi conectado!");
-    Serial.print("Endereco IP: ");
+    Serial.println(F("Wi-Fi conectado com sucesso!"));
+    Serial.print(F("Endereco IP: "));
     Serial.println(WiFi.localIP());
+    Serial.print(F("Servidor: http://"));
+    Serial.print(SERVER_IP);
+    Serial.print(":");
+    Serial.println(SERVER_PORT);
     showMessageOnOLED("Wi-Fi OK!", WiFi.localIP().toString());
   } else {
-    Serial.println("\nFalha ao conectar no Wi-Fi.");
+    Serial.println(F("ERRO: Falha ao conectar no Wi-Fi."));
+    Serial.println(F("Verifique SSID e senha."));
     showMessageOnOLED("Falha no Wi-Fi");
   }
-  delay(2000); // Aguarda para que a mensagem de status seja lida
+  delay(2000);
 }
 
 /**
@@ -300,7 +329,10 @@ void enviarLivroParaServidor(String rfidLivro) {
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
-  Serial.println(F("\nInicializando sistema..."));
+  Serial.println(F("\n========================================"));
+  Serial.println(F("CARRINHO AUTOMATICO RFID - IFNMG"));
+  Serial.println(F("Inicializando sistema..."));
+  Serial.println(F("========================================\n"));
 
   initOLED();
   showMessageOnOLED("Iniciando...");
@@ -308,24 +340,69 @@ void setup() {
 
   initRFID();
   
-  conectarWiFi(); // Conecta ao Wi-Fi antes de iniciar o loop principal
-
-  // Buscar sessão ativa ao iniciar
-  obterSessaoDoServidor();
-
-  if (sessaoAtiva != "") {
-    showMessageOnOLED("Pronto!", "Aproxime livro");
-  } else {
-    showMessageOnOLED("Sistema Pronto", "Inicie no app");
-  }
-  Serial.println(F("Sistema pronto. Aproxime um livro RFID."));
+  conectarWiFi();
+  
+  // NÃO chamar obterSessaoDoServidor() aqui para evitar WDT timeout
+  // Será chamado no primeiro loop()
+  
+  showMessageOnOLED("Sistema Pronto", "Inicie no app");
+  Serial.println(F("\n========================================"));
+  Serial.println(F("Sistema pronto!"));
+  Serial.println(F("Aguardando livros RFID..."));
+  Serial.println(F("========================================\n"));
 }
 
 void loop() {
   // Reconecta Wi-Fi se necessário
   if (WiFi.status() != WL_CONNECTED) {
+    Serial.println(F("Wi-Fi desconectado! Tentando reconectar..."));
     conectarWiFi();
   }
+
+  // Busca sessão na primeira vez e depois a cada 10 segundos
+  static unsigned long ultimaVerificacao = 0;
+  static bool primeiraVez = true;
+  
+  // Verifica imediatamente na primeira vez, depois a cada 10s
+  if (primeiraVez || (millis() - ultimaVerificacao > 10000)) {
+    ultimaVerificacao = millis();
+    
+    if (primeiraVez) {
+      Serial.println(F("\n--- Buscando sessao ativa pela primeira vez ---"));
+      primeiraVez = false;
+    }
+    
+    if (sessaoAtiva == "") {
+      obterSessaoDoServidor();
+    }
+  }
+
+  // Procura por cartão RFID (livro)
+  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
+    String rfidLivro = uidToString(mfrc522.uid.uidByte, mfrc522.uid.size);
+
+    Serial.println(F("\n*** LIVRO DETECTADO ***"));
+    Serial.print(F("RFID: "));
+    Serial.println(rfidLivro);
+
+    showMessageOnOLED("Livro detectado:", rfidLivro);
+    delay(800);
+
+    enviarLivroParaServidor(rfidLivro);
+
+    mfrc522.PICC_HaltA();
+    mfrc522.PCD_StopCrypto1();
+    delay(1000);
+
+    if (sessaoAtiva != "") {
+      showMessageOnOLED("Pronto", "Proximo livro");
+    } else {
+      showMessageOnOLED("Sistema Pronto", "Inicie no app");
+    }
+    
+    Serial.println(F("\nAguardando proximo livro..."));
+  }
+}
 
   // A cada 10 segundos, verifica se há sessão ativa
   static unsigned long ultimaVerificacao = 0;
