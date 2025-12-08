@@ -1,16 +1,39 @@
 import type { FastifyInstance } from 'fastify'
 import { CarrinhoService } from '../services/carrinho.service'
 import { authMiddleware } from '../middlewares/auth'
+import {
+  finalizarCarrinhoSchema,
+  rfidLeituraSchema,
+  associarRfidSchema,
+} from '../utils/validation'
 import type {
   AuthRequest,
   FinalizarCarrinhoBody,
   RFIDLeituraBody,
+  AssociarRfidBody,
 } from '../types/api.types'
-import { validateBody } from '../middlewares/validate'
-import { finalizarCarrinhoSchema, rfidLeituraSchema } from '../utils/validation'
 
 export async function carrinhoRoutes(fastify: FastifyInstance) {
   const carrinhoService = new CarrinhoService()
+
+  // Associar RFID a um carrinho
+  fastify.post(
+    '/rfid',
+    {
+      preHandler: validateBody(associarRfidSchema),
+    },
+    async (request, reply) => {
+      try {
+        const { rfid } = request.body as AssociarRfidBody
+        const carrinho = await carrinhoService.associarCarrinhoRfid(rfid)
+        return reply.send(carrinho)
+      } catch (error: any) {
+        return reply.status(400).send({
+          error: error.message,
+        })
+      }
+    },
+  )
 
   // Iniciar sessão do carrinho
   fastify.post(

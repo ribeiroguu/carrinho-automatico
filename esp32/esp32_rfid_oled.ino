@@ -4,12 +4,12 @@
  * Data: 07/12/2025
  * 
  * Descrição:
- * Este código realiza a leitura de tags/cartões RFID, exibe o UID em um display OLED
- * e conecta-se a uma rede Wi-Fi para futuro envio de dados a um servidor.
+ * Este código realiza a leitura de tags/cartões RFID, exibe o UID em um display OLED,
+ * conecta-se a uma rede Wi-Fi e envia o UID lido para um servidor HTTP.
  * 
  * O código foi atualizado para incluir:
  * - Conexão Wi-Fi com status exibido no OLED e Serial.
- * - Uma função para simular o envio do UID para um servidor.
+ * - Envio do UID para um servidor via requisição HTTP POST.
  */
 
 // =============================================================================
@@ -21,6 +21,7 @@
 #include <Adafruit_GFX.h>     // Biblioteca gráfica principal da Adafruit
 #include <Adafruit_SSD1306.h> // Biblioteca para o controlador de display OLED SSD1306
 #include <WiFi.h>             // Biblioteca para funcionalidades Wi-Fi do ESP32
+#include <HTTPClient.h>       // Biblioteca para realizar requisições HTTP
 
 // =============================================================================
 // Definições de Pinos e Constantes
@@ -30,6 +31,11 @@
 // Substitua pelas credenciais da sua rede Wi-Fi
 const char* WIFI_SSID = "RONALDO";
 const char* WIFI_PASSWORD = "rona652307";
+
+// --- Configurações do Servidor ---
+// IMPORTANTE: Substitua pelo IP da máquina onde o servidor está rodando
+const char* SERVER_IP = "192.168.1.10"; // Exemplo: "192.168.0.10"
+const int SERVER_PORT = 3000;
 
 // --- Pinos para o Leitor RFID MFRC522 (Interface SPI) ---
 #define RST_PIN  2 // Pino de Reset do RC522
@@ -100,8 +106,6 @@ void initRFID() {
 
 /**
  * @brief Conecta-se à rede Wi-Fi.
- * 
- * Tenta conectar ao Wi-Fi e exibe o status no OLED e no Serial Monitor.
  */
 void conectarWiFi() {
   Serial.println("Conectando ao Wi-Fi...");
@@ -129,7 +133,7 @@ void conectarWiFi() {
 }
 
 /**
- * @brief Converte o array de bytes do UID para uma string hexadecimal.
+ * @brief Converte o array de bytes do UID para uma string hexadecimal sem espaços.
  */
 String uidToString(byte* buffer, byte bufferSize) {
   String uid = "";
@@ -138,56 +142,63 @@ String uidToString(byte* buffer, byte bufferSize) {
       uid += "0";
     }
     uid += String(buffer[i], HEX);
-    if (i < bufferSize - 1) {
-      uid += " ";
-    }
   }
   uid.toUpperCase();
   return uid;
 }
 
 /**
- * @brief Simula o envio do UID para um servidor.
+ * @brief Envia o UID lido para o servidor via HTTP POST.
  * 
- * @param uid O UID do cartão a ser "enviado".
+ * @param uid O UID do cartão a ser enviado.
  */
 void enviarUIDParaServidor(String uid) {
-  Serial.print("Preparando para enviar UID: ");
+  // Verifica se o Wi-Fi está conectado antes de tentar enviar
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Wi-Fi desconectado. Nao foi possivel enviar o UID.");
+    showMessageOnOLED("Erro de Wi-Fi", "Nao enviado");
+    delay(1500);
+    return;
+  }
+
+  Serial.print("Enviando UID para o servidor: ");
   Serial.println(uid);
   showMessageOnOLED("Enviando UID...", uid);
 
-  // --- PONTO DE EXPANSÃO: Envio HTTP ---
-  // Aqui é onde você implementaria a lógica de envio real para um servidor.
-  // Você pode usar a biblioteca HTTPClient do ESP32.
-  //
-  // Exemplo de como seria:
-  //
-  // #include <HTTPClient.h>
-  //
-  // if (WiFi.status() == WL_CONNECTED) {
-  //   HTTPClient http;
-  //   String serverUrl = "http://SEU_SERVIDOR/api/leitura";
-  //   
-  //   http.begin(serverUrl);
-  //   http.addHeader("Content-Type", "application/json");
-  //   
-  //   String jsonPayload = "{\"uid\":\"" + uid + "\"}";
-  //   
-  //   int httpResponseCode = http.POST(jsonPayload);
-  //   
-  //   if (httpResponseCode > 0) {
-  //     Serial.printf("Servidor respondeu com codigo: %d\n", httpResponseCode);
-  //   } else {
-  //     Serial.printf("Falha no envio. Codigo de erro: %s\n", http.errorToString(httpResponseCode).c_str());
-  //   }
-  //   
-  //   http.end();
-  // } else {
-  //   Serial.println("Wi-Fi desconectado. Nao foi possivel enviar o UID.");
-  // }
-  // ----------------------------------------------------
+  HTTPClient http;
   
-  delay(1000); // Apenas para simular o tempo de envio
+  // Monta a URL do endpoint do servidor
+  String serverUrl = "http://" + String(SERVER_IP) + ":" + String(SERVER_PORT) + "/carrinhos/rfid";
+  http.begin(serverUrl);
+  
+  // Define o cabeçalho da requisição como JSON
+  http.addHeader("Content-Type", "application/json");
+  
+  // Monta o corpo (payload) da requisição em formato JSON
+  String jsonPayload = "{\"rfid\":\"" + uid + "\"}";
+  
+  // Envia a requisição POST e obtém o código de resposta
+  int httpResponseCode = http.POST(jsonPayload);
+  
+  if (httpResponseCode > 0) {
+    String responsePayload = http.getString();
+    Serial.printf("Servidor respondeu com codigo: %d\n", httpResponseCode);
+    Serial.printf("Resposta: %s\n", responsePayload.c_str());
+    
+    if (httpResponseCode == 200) {
+      showMessageOnOLED("Servidor OK", "UID Enviado!");
+    } else {
+      showMessageOnOLED("Erro no Servidor", "Codigo: " + String(httpResponseCode));
+    }
+    
+  } else {
+    Serial.printf("Falha no envio. Codigo de erro: %s\n", http.errorToString(httpResponseCode).c_str());
+    showMessageOnOLED("Falha no Envio", http.errorToString(httpResponseCode).c_str());
+  }
+  
+  // Libera os recursos do cliente HTTP
+  http.end();
+  delay(1500); // Aguarda para a mensagem ser lida
 }
 
 // =============================================================================
@@ -211,7 +222,7 @@ void setup() {
 }
 
 void loop() {
-  // Se o Wi-Fi cair, tenta reconectar (opcional, mas recomendado)
+  // Se o Wi-Fi cair, tenta reconectar
   if (WiFi.status() != WL_CONNECTED) {
     conectarWiFi();
   }
@@ -225,9 +236,9 @@ void loop() {
     Serial.println(uid);
 
     showMessageOnOLED("Cartao detectado:", uid);
-    delay(1000); // Pequeno delay para exibir o UID detectado
+    delay(1000);
 
-    // Chama a função que simula o envio do UID
+    // Chama a função que envia o UID para o servidor
     enviarUIDParaServidor(uid);
 
     mfrc522.PICC_HaltA();

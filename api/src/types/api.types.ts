@@ -32,6 +32,10 @@ export interface RFIDLeituraBody {
   rfid_tag: string
 }
 
+export interface AssociarRfidBody {
+  rfid: string
+}
+
 export interface FinalizarCarrinhoBody {
   sessao_id: string
 }

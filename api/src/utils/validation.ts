@@ -32,6 +32,10 @@ export const finalizarCarrinhoSchema = z.object({
   sessao_id: z.string().min(1, 'Sessão ID é obrigatório'),
 })
 
+export const associarRfidSchema = z.object({
+  rfid: z.string().min(1, 'RFID é obrigatório'),
+})
+
 // Push Token
 export const pushTokenSchema = z.object({
   push_token: z.string().min(1, 'Push token é obrigatório'),
